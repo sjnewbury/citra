@@ -59,6 +59,10 @@ endif()
 add_subdirectory(enet)
 target_include_directories(enet INTERFACE ./enet/include)
 
+# LibRetro
+add_library(libretro INTERFACE)
+target_include_directories(libretro INTERFACE ./libretro)
+
 if (ENABLE_WEB_SERVICE)
     # LibreSSL
     set(LIBRESSL_SKIP_INSTALL ON CACHE BOOL "")
