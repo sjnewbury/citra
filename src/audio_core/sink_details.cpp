@@ -11,6 +11,9 @@
 #ifdef HAVE_SDL2
 #include "audio_core/sdl2_sink.h"
 #endif
+#ifdef HAVE_LIBRETRO
+#include "audio_core/libretro_sink.h"
+#endif
 #ifdef HAVE_CUBEB
 #include "audio_core/cubeb_sink.h"
 #endif
@@ -20,6 +23,9 @@ namespace AudioCore {
 
 // g_sink_details is ordered in terms of desirability, with the best choice at the top.
 const std::vector<SinkDetails> g_sink_details = {
+#ifdef HAVE_LIBRETRO
+    {"libretro", []() { return std::make_unique<LibRetroSink>(); }},
+#endif
 #ifdef HAVE_CUBEB
     {"cubeb", []() { return std::make_unique<CubebSink>(); }},
 #endif
