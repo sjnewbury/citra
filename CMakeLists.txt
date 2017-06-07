@@ -13,6 +13,8 @@ option(ENABLE_QT "Enable the Qt frontend" ON)
 option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
 option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
+option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
+
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 option(CITRA_USE_BUNDLED_CURL "FOR MINGW ONLY: Download curl configured against winssl instead of openssl" OFF)
 
