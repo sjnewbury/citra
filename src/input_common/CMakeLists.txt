@@ -15,6 +15,7 @@ add_library(input_common STATIC
     udp/udp.h
 
     $<$<BOOL:${SDL2_FOUND}>:sdl/sdl.cpp sdl/sdl.h>
+    $<$<BOOL:${ENABLE_LIBRETRO}>:libretro/libretro.cpp libretro/libretro.h>
 )
 
 create_target_directory_groups(input_common)
@@ -23,4 +24,9 @@ target_link_libraries(input_common PUBLIC core PRIVATE common ${Boost_LIBRARIES}
 if(SDL2_FOUND)
     target_link_libraries(input_common PRIVATE SDL2)
     target_compile_definitions(input_common PRIVATE HAVE_SDL2)
+endif()
+
+if(ENABLE_LIBRETRO)
+    target_link_libraries(input_common PRIVATE libretro)
+    target_compile_definitions(input_common PRIVATE HAVE_LIBRETRO)
 endif()
