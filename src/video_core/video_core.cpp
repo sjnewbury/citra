@@ -36,6 +36,10 @@ bool Init(EmuWindow* emu_window) {
             LOG_ERROR(Render, "initialization failed !");
             return false;
         }
+    } else {
+        // We don't want OpenGL calls if we
+        //  cannot handle them yet.
+        VideoCore::g_renderer = nullptr;
     }
     return true;
 }
