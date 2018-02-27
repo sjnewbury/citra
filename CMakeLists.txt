@@ -1,5 +1,6 @@
 # CMake 3.8 required for 17 to be a valid value for CXX_STANDARD
-cmake_minimum_required(VERSION 3.8)
+# Selby: disabled until Ubuntu 18.04 goes live (upstream is going way too ahead of themselves)
+cmake_minimum_required(VERSION 3.7)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
 include(DownloadExternals)
@@ -93,7 +94,7 @@ message(STATUS "Target architecture: ${ARCHITECTURE}")
 # Configure compilation flags
 # ===========================
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT MSVC)
