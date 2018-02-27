@@ -17,8 +17,10 @@
 #include <QtWidgets>
 #include "citra_qt/aboutdialog.h"
 #include "citra_qt/bootmanager.h"
+#include "citra_qt/compatdb.h"
 #include "citra_qt/configuration/config.h"
 #include "citra_qt/configuration/configure_dialog.h"
+#include "citra_qt/debugger/console.h"
 #include "citra_qt/debugger/graphics/graphics.h"
 #include "citra_qt/debugger/graphics/graphics_breakpoints.h"
 #include "citra_qt/debugger/graphics/graphics_cmdlists.h"
@@ -33,6 +35,7 @@
 #include "citra_qt/main.h"
 #include "citra_qt/ui_settings.h"
 #include "citra_qt/updater/updater.h"
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -45,6 +48,7 @@
 #include "core/core.h"
 #include "core/file_sys/archive_source_sd_savedata.h"
 #include "core/gdbstub/gdbstub.h"
+#include "core/hle/service/fs/archive.h"
 #include "core/loader/loader.h"
 #include "core/settings.h"
 
@@ -97,6 +101,8 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     // register size_t to use in slots and signals
     qRegisterMetaType<size_t>("size_t");
 
+    LoadTranslation();
+
     Pica::g_debug_context = Pica::DebugContext::Construct();
     setAcceptDrops(true);
     ui.setupUi(this);
@@ -114,8 +120,8 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     ConnectMenuEvents();
     ConnectWidgetEvents();
 
-    setWindowTitle(QString("Citra %1| %2-%3")
-                       .arg(Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
+    SetupUIStrings();
+
     show();
 
     game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
@@ -144,6 +150,9 @@ GMainWindow::~GMainWindow() {
 }
 
 void GMainWindow::InitializeWidgets() {
+#ifdef CITRA_ENABLE_COMPATIBILITY_REPORTING
+    ui.action_Report_Compatibility->setVisible(true);
+#endif
     render_window = new GRenderWindow(this, emu_thread.get());
     render_window->hide();
 
@@ -185,7 +194,15 @@ void GMainWindow::InitializeWidgets() {
         statusBar()->addPermanentWidget(label, 0);
     }
     statusBar()->setVisible(true);
+
+    // Removes an ugly inner border from the status bar widgets under Linux
     setStyleSheet("QStatusBar::item{border: none;}");
+
+    QActionGroup* actionGroup_ScreenLayouts = new QActionGroup(this);
+    actionGroup_ScreenLayouts->addAction(ui.action_Screen_Layout_Default);
+    actionGroup_ScreenLayouts->addAction(ui.action_Screen_Layout_Single_Screen);
+    actionGroup_ScreenLayouts->addAction(ui.action_Screen_Layout_Large_Screen);
+    actionGroup_ScreenLayouts->addAction(ui.action_Screen_Layout_Side_by_Side);
 }
 
 void GMainWindow::InitializeDebugWidgets() {
@@ -262,10 +279,15 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 
 void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
-    RegisterHotkey("Main Window", "Swap Screens", QKeySequence::NextChild);
     RegisterHotkey("Main Window", "Start Emulation");
+    RegisterHotkey("Main Window", "Swap Screens", QKeySequence(tr("F9")));
+    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence(tr("F10")));
     RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
     RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
+                   Qt::ApplicationShortcut);
+    RegisterHotkey("Main Window", "Increase Speed Limit", QKeySequence("+"),
+                   Qt::ApplicationShortcut);
+    RegisterHotkey("Main Window", "Decrease Speed Limit", QKeySequence("-"),
                    Qt::ApplicationShortcut);
     LoadHotkeys();
 
@@ -273,8 +295,10 @@ void GMainWindow::InitializeHotkeys() {
             &GMainWindow::OnMenuLoadFile);
     connect(GetHotkey("Main Window", "Start Emulation", this), &QShortcut::activated, this,
             &GMainWindow::OnStartGame);
-    connect(GetHotkey("Main Window", "Swap Screens", render_window), &QShortcut::activated, this,
-            &GMainWindow::OnSwapScreens);
+    connect(GetHotkey("Main Window", "Swap Screens", render_window), &QShortcut::activated,
+            ui.action_Screen_Layout_Swap_Screens, &QAction::trigger);
+    connect(GetHotkey("Main Window", "Toggle Screen Layout", render_window), &QShortcut::activated,
+            this, &GMainWindow::ToggleScreenLayout);
     connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activated,
             ui.action_Fullscreen, &QAction::trigger);
     connect(GetHotkey("Main Window", "Fullscreen", render_window), &QShortcut::activatedAmbiguously,
@@ -285,6 +309,21 @@ void GMainWindow::InitializeHotkeys() {
             ToggleFullscreen();
         }
     });
+    constexpr u16 SPEED_LIMIT_STEP = 5;
+    connect(GetHotkey("Main Window", "Increase Speed Limit", this), &QShortcut::activated, this,
+            [&] {
+                if (Settings::values.frame_limit < 9999 - SPEED_LIMIT_STEP) {
+                    Settings::values.frame_limit += SPEED_LIMIT_STEP;
+                    UpdateStatusBar();
+                }
+            });
+    connect(GetHotkey("Main Window", "Decrease Speed Limit", this), &QShortcut::activated, this,
+            [&] {
+                if (Settings::values.frame_limit > SPEED_LIMIT_STEP) {
+                    Settings::values.frame_limit -= SPEED_LIMIT_STEP;
+                    UpdateStatusBar();
+                }
+            });
 }
 
 void GMainWindow::ShowUpdaterWidgets() {
@@ -321,6 +360,7 @@ void GMainWindow::RestoreUIState() {
     ToggleWindowMode();
 
     ui.action_Fullscreen->setChecked(UISettings::values.fullscreen);
+    SyncMenuUISettings();
 
     ui.action_Display_Dock_Widget_Headers->setChecked(UISettings::values.display_titlebar);
     OnDisplayTitleBars(ui.action_Display_Dock_Widget_Headers->isChecked());
@@ -330,12 +370,12 @@ void GMainWindow::RestoreUIState() {
 
     ui.action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar);
     statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
+    Debugger::ToggleConsole();
 }
 
 void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::GameChosen, this, &GMainWindow::OnGameListLoadFile);
-    connect(game_list, &GameList::OpenSaveFolderRequested, this,
-            &GMainWindow::OnGameListOpenSaveFolder);
+    connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
 
     connect(this, &GMainWindow::EmulationStarting, render_window,
             &GRenderWindow::OnEmulationStarting);
@@ -359,6 +399,8 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Start, &QAction::triggered, this, &GMainWindow::OnStartGame);
     connect(ui.action_Pause, &QAction::triggered, this, &GMainWindow::OnPauseGame);
     connect(ui.action_Stop, &QAction::triggered, this, &GMainWindow::OnStopGame);
+    connect(ui.action_Report_Compatibility, &QAction::triggered, this,
+            &GMainWindow::OnMenuReportCompatibility);
     connect(ui.action_Configure, &QAction::triggered, this, &GMainWindow::OnConfigure);
 
     // View
@@ -370,7 +412,20 @@ void GMainWindow::ConnectMenuEvents() {
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
     ui.action_Fullscreen->setShortcut(GetHotkey("Main Window", "Fullscreen", this)->key());
+    ui.action_Screen_Layout_Swap_Screens->setShortcut(
+        GetHotkey("Main Window", "Swap Screens", this)->key());
+    ui.action_Screen_Layout_Swap_Screens->setShortcutContext(Qt::WidgetWithChildrenShortcut);
     connect(ui.action_Fullscreen, &QAction::triggered, this, &GMainWindow::ToggleFullscreen);
+    connect(ui.action_Screen_Layout_Default, &QAction::triggered, this,
+            &GMainWindow::ChangeScreenLayout);
+    connect(ui.action_Screen_Layout_Single_Screen, &QAction::triggered, this,
+            &GMainWindow::ChangeScreenLayout);
+    connect(ui.action_Screen_Layout_Large_Screen, &QAction::triggered, this,
+            &GMainWindow::ChangeScreenLayout);
+    connect(ui.action_Screen_Layout_Side_by_Side, &QAction::triggered, this,
+            &GMainWindow::ChangeScreenLayout);
+    connect(ui.action_Screen_Layout_Swap_Screens, &QAction::triggered, this,
+            &GMainWindow::OnSwapScreens);
 
     // Help
     connect(ui.action_FAQ, &QAction::triggered,
@@ -614,6 +669,7 @@ void GMainWindow::ShutdownGame() {
     ui.action_Start->setText(tr("Start"));
     ui.action_Pause->setEnabled(false);
     ui.action_Stop->setEnabled(false);
+    ui.action_Report_Compatibility->setEnabled(false);
     render_window->hide();
     game_list->show();
     game_list->setFilterFocus();
@@ -671,18 +727,44 @@ void GMainWindow::OnGameListLoadFile(QString game_path) {
     BootGame(game_path);
 }
 
-void GMainWindow::OnGameListOpenSaveFolder(u64 program_id) {
-    std::string sdmc_dir = FileUtil::GetUserPath(D_SDMC_IDX);
-    std::string path = FileSys::ArchiveSource_SDSaveData::GetSaveDataPathFor(sdmc_dir, program_id);
+void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target) {
+    std::string path;
+    std::string open_target;
+
+    switch (target) {
+    case GameListOpenTarget::SAVE_DATA: {
+        open_target = "Save Data";
+        std::string sdmc_dir = FileUtil::GetUserPath(D_SDMC_IDX);
+        path = FileSys::ArchiveSource_SDSaveData::GetSaveDataPathFor(sdmc_dir, program_id);
+        break;
+    }
+    case GameListOpenTarget::APPLICATION:
+        open_target = "Application";
+        path = Service::AM::GetTitlePath(Service::FS::MediaType::SDMC, program_id) + "content/";
+        break;
+    case GameListOpenTarget::UPDATE_DATA:
+        open_target = "Update Data";
+        path = Service::AM::GetTitlePath(Service::FS::MediaType::SDMC, program_id + 0xe00000000) +
+               "content/";
+        break;
+    default:
+        LOG_ERROR(Frontend, "Unexpected target %d", target);
+        return;
+    }
+
     QString qpath = QString::fromStdString(path);
 
     QDir dir(qpath);
     if (!dir.exists()) {
-        QMessageBox::critical(this, tr("Error Opening Save Folder"), tr("Folder does not exist!"));
+        QMessageBox::critical(
+            this, tr("Error Opening %1 Folder").arg(QString::fromStdString(open_target)),
+            tr("Folder does not exist!"));
         return;
     }
 
-    LOG_INFO(Frontend, "Opening save data path for program_id=%" PRIu64, program_id);
+    LOG_INFO(Frontend, "Opening %s path for program_id=%016" PRIx64, open_target.c_str(),
+             program_id);
+
     QDesktopServices::openUrl(QUrl::fromLocalFile(qpath));
 }
 
@@ -795,6 +877,7 @@ void GMainWindow::OnStartGame() {
 
     ui.action_Pause->setEnabled(true);
     ui.action_Stop->setEnabled(true);
+    ui.action_Report_Compatibility->setEnabled(true);
 }
 
 void GMainWindow::OnPauseGame() {
@@ -807,6 +890,20 @@ void GMainWindow::OnPauseGame() {
 
 void GMainWindow::OnStopGame() {
     ShutdownGame();
+}
+
+void GMainWindow::OnMenuReportCompatibility() {
+    if (!Settings::values.citra_token.empty() && !Settings::values.citra_username.empty()) {
+        CompatDB compatdb{this};
+        compatdb.exec();
+    } else {
+        QMessageBox::critical(
+            this, tr("Missing Citra Account"),
+            tr("In order to submit a game compatibility test case, you must link your Citra "
+               "account.<br><br/>To link your Citra account, go to Emulation &gt; Configuration "
+               "&gt; "
+               "Web."));
+    }
 }
 
 void GMainWindow::ToggleFullscreen() {
@@ -869,12 +966,59 @@ void GMainWindow::ToggleWindowMode() {
     }
 }
 
+void GMainWindow::ChangeScreenLayout() {
+    Settings::LayoutOption new_layout = Settings::LayoutOption::Default;
+
+    if (ui.action_Screen_Layout_Default->isChecked()) {
+        new_layout = Settings::LayoutOption::Default;
+    } else if (ui.action_Screen_Layout_Single_Screen->isChecked()) {
+        new_layout = Settings::LayoutOption::SingleScreen;
+    } else if (ui.action_Screen_Layout_Large_Screen->isChecked()) {
+        new_layout = Settings::LayoutOption::LargeScreen;
+    } else if (ui.action_Screen_Layout_Side_by_Side->isChecked()) {
+        new_layout = Settings::LayoutOption::SideScreen;
+    }
+
+    Settings::values.layout_option = new_layout;
+    Settings::Apply();
+}
+
+void GMainWindow::ToggleScreenLayout() {
+    Settings::LayoutOption new_layout = Settings::LayoutOption::Default;
+
+    switch (Settings::values.layout_option) {
+    case Settings::LayoutOption::Default:
+        new_layout = Settings::LayoutOption::SingleScreen;
+        break;
+    case Settings::LayoutOption::SingleScreen:
+        new_layout = Settings::LayoutOption::LargeScreen;
+        break;
+    case Settings::LayoutOption::LargeScreen:
+        new_layout = Settings::LayoutOption::SideScreen;
+        break;
+    case Settings::LayoutOption::SideScreen:
+        new_layout = Settings::LayoutOption::Default;
+        break;
+    }
+
+    Settings::values.layout_option = new_layout;
+    Settings::Apply();
+}
+
+void GMainWindow::OnSwapScreens() {
+    Settings::values.swap_screen = ui.action_Screen_Layout_Swap_Screens->isChecked();
+    Settings::Apply();
+}
+
 void GMainWindow::OnConfigure() {
     ConfigureDialog configureDialog(this);
+    connect(&configureDialog, &ConfigureDialog::languageChanged, this,
+            &GMainWindow::OnLanguageChanged);
     auto result = configureDialog.exec();
     if (result == QDialog::Accepted) {
         configureDialog.applyConfiguration();
         UpdateUITheme();
+        SyncMenuUISettings();
         config->Save();
     }
 }
@@ -886,11 +1030,6 @@ void GMainWindow::OnToggleFilterBar() {
     } else {
         game_list->clearFilter();
     }
-}
-
-void GMainWindow::OnSwapScreens() {
-    Settings::values.swap_screen = !Settings::values.swap_screen;
-    Settings::Apply();
 }
 
 void GMainWindow::OnCreateGraphicsSurfaceViewer() {
@@ -908,7 +1047,13 @@ void GMainWindow::UpdateStatusBar() {
 
     auto results = Core::System::GetInstance().GetAndResetPerfStats();
 
-    emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
+    if (Settings::values.use_frame_limit) {
+        emu_speed_label->setText(tr("Speed: %1% / %2%")
+                                     .arg(results.emulation_speed * 100.0, 0, 'f', 0)
+                                     .arg(Settings::values.frame_limit));
+    } else {
+        emu_speed_label->setText(tr("Speed: %1%").arg(results.emulation_speed * 100.0, 0, 'f', 0));
+    }
     game_fps_label->setText(tr("Game: %1 FPS").arg(results.game_fps, 0, 'f', 0));
     emu_frametime_label->setText(tr("Frame: %1 ms").arg(results.frametime * 1000.0, 0, 'f', 2));
 
@@ -974,6 +1119,7 @@ void GMainWindow::OnCoreError(Core::System::ResultStatus result, std::string det
     } else {
         // Only show the message if the game is still running.
         if (emu_thread) {
+            emu_thread->SetRunning(true);
             message_label->setText(status_message);
             message_label->setVisible(true);
         }
@@ -1084,13 +1230,63 @@ void GMainWindow::UpdateUITheme() {
     }
 }
 
+void GMainWindow::LoadTranslation() {
+    // If the selected language is English, no need to install any translation
+    if (UISettings::values.language == "en") {
+        return;
+    }
+
+    bool loaded;
+
+    if (UISettings::values.language.isEmpty()) {
+        // If the selected language is empty, use system locale
+        loaded = translator.load(QLocale(), "", "", ":/languages/");
+    } else {
+        // Otherwise load from the specified file
+        loaded = translator.load(UISettings::values.language, ":/languages/");
+    }
+
+    if (loaded) {
+        qApp->installTranslator(&translator);
+    } else {
+        UISettings::values.language = "en";
+    }
+}
+
+void GMainWindow::OnLanguageChanged(const QString& locale) {
+    if (UISettings::values.language != "en") {
+        qApp->removeTranslator(&translator);
+    }
+
+    UISettings::values.language = locale;
+    LoadTranslation();
+    ui.retranslateUi(this);
+    SetupUIStrings();
+}
+
+void GMainWindow::SetupUIStrings() {
+    setWindowTitle(
+        tr("Citra %1| %2-%3").arg(Common::g_build_name, Common::g_scm_branch, Common::g_scm_desc));
+}
+
+void GMainWindow::SyncMenuUISettings() {
+    ui.action_Screen_Layout_Default->setChecked(Settings::values.layout_option ==
+                                                Settings::LayoutOption::Default);
+    ui.action_Screen_Layout_Single_Screen->setChecked(Settings::values.layout_option ==
+                                                      Settings::LayoutOption::SingleScreen);
+    ui.action_Screen_Layout_Large_Screen->setChecked(Settings::values.layout_option ==
+                                                     Settings::LayoutOption::LargeScreen);
+    ui.action_Screen_Layout_Side_by_Side->setChecked(Settings::values.layout_option ==
+                                                     Settings::LayoutOption::SideScreen);
+    ui.action_Screen_Layout_Swap_Screens->setChecked(Settings::values.swap_screen);
+}
+
 #ifdef main
 #undef main
 #endif
 
 int main(int argc, char* argv[]) {
-    Log::Filter log_filter(Log::Level::Info);
-    Log::SetFilter(&log_filter);
+    Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
 
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -1108,7 +1304,12 @@ int main(int argc, char* argv[]) {
 
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
+    Log::Filter log_filter;
     log_filter.ParseFilterString(Settings::values.log_filter);
+    Log::SetGlobalFilter(log_filter);
+    FileUtil::CreateFullPath(FileUtil::GetUserPath(D_LOGS_IDX));
+    Log::AddBackend(
+        std::make_unique<Log::FileBackend>(FileUtil::GetUserPath(D_LOGS_IDX) + LOG_FILE));
 
     main_window.show();
     return app.exec();

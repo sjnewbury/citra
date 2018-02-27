@@ -269,7 +269,7 @@ void Init() {
     FS::ArchiveInit();
     ACT::Init();
     AM::Init();
-    APT::Init();
+    APT::InstallInterfaces(*SM::g_service_manager);
     BOSS::Init();
     CAM::InstallInterfaces(*SM::g_service_manager);
     CECD::Init();
@@ -285,7 +285,7 @@ void Init() {
     NFC::Init();
     NIM::Init();
     NWM::Init();
-    PTM::Init();
+    PTM::InstallInterfaces(*SM::g_service_manager);
     QTM::Init();
 
     AddService(new CSND::CSND_SND);
@@ -295,14 +295,13 @@ void Init() {
     AddService(new PM::PM_APP);
     AddService(new SOC::SOC_U);
     AddService(new SSL::SSL_C);
-    AddService(new Y2R::Y2R_U);
+    Y2R::InstallInterfaces(*SM::g_service_manager);
 
     LOG_DEBUG(Service, "initialized OK");
 }
 
 /// Shutdown ServiceManager
 void Shutdown() {
-    PTM::Shutdown();
     NFC::Shutdown();
     NIM::Shutdown();
     NEWS::Shutdown();
@@ -312,7 +311,6 @@ void Shutdown() {
     CFG::Shutdown();
     CECD::Shutdown();
     BOSS::Shutdown();
-    APT::Shutdown();
     AM::Shutdown();
     FS::ArchiveShutdown();
 

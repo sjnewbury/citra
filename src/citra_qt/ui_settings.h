@@ -48,6 +48,7 @@ struct Values {
     QString gamedir;
     bool gamedir_deepscan;
     QStringList recent_files;
+    QString language;
 
     QString theme;
 
@@ -55,6 +56,8 @@ struct Values {
     std::vector<Shortcut> shortcuts;
 
     uint32_t callout_flags;
+
+    bool show_console;
 };
 
 extern Values values;

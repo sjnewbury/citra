@@ -1,5 +1,5 @@
-# CMake 3.6 required for FindBoost to define IMPORTED libs properly on unknown Boost versions
-cmake_minimum_required(VERSION 3.6)
+# CMake 3.8 required for 17 to be a valid value for CXX_STANDARD
+cmake_minimum_required(VERSION 3.8)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/externals/cmake-modules")
 include(DownloadExternals)
@@ -10,6 +10,7 @@ option(ENABLE_SDL2 "Enable the SDL2 frontend" ON)
 option(CITRA_USE_BUNDLED_SDL2 "Download bundled SDL2 binaries" OFF)
 
 option(ENABLE_QT "Enable the Qt frontend" ON)
+option(ENABLE_QT_TRANSLATION "Enable translations for the Qt frontend" OFF)
 option(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" OFF)
 
 option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
@@ -18,6 +19,7 @@ option(DISABLE_LIBPNG "Disables compiling against libpng" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 option(CITRA_USE_BUNDLED_CURL "FOR MINGW ONLY: Download curl configured against winssl instead of openssl" OFF)
+
 if (ENABLE_WEB_SERVICE AND CITRA_USE_BUNDLED_CURL AND WINDOWS AND MSVC)
     message("Turning off use bundled curl as msvc can compile curl on cpr")
     SET(CITRA_USE_BUNDLED_CURL OFF CACHE BOOL "" FORCE)
@@ -69,14 +71,16 @@ function(detect_architecture symbol arch)
     endif()
 endfunction()
 
-if (MSVC)
-    detect_architecture("_M_AMD64" x86_64)
-    detect_architecture("_M_IX86" x86)
-    detect_architecture("_M_ARM" ARM)
-else()
-    detect_architecture("__x86_64__" x86_64)
-    detect_architecture("__i386__" x86)
-    detect_architecture("__arm__" ARM)
+if (NOT ENABLE_GENERIC)
+    if (MSVC)
+        detect_architecture("_M_AMD64" x86_64)
+        detect_architecture("_M_IX86" x86)
+        detect_architecture("_M_ARM" ARM)
+    else()
+        detect_architecture("__x86_64__" x86_64)
+        detect_architecture("__i386__" x86)
+        detect_architecture("__arm__" ARM)
+    endif()
 endif()
 if (NOT DEFINED ARCHITECTURE)
     set(ARCHITECTURE "GENERIC")
@@ -89,7 +93,7 @@ message(STATUS "Target architecture: ${ARCHITECTURE}")
 # Configure compilation flags
 # ===========================
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT MSVC)
@@ -130,9 +134,10 @@ else()
     # /permissive- - enables stricter C++ standards conformance checks
     set(CMAKE_C_FLAGS   "/W3 /MP /Zi /Zo /permissive-" CACHE STRING "" FORCE)
     # /EHsc - C++-only exception handling semantics
+    # /std:c++latest - Latest available C++ standard
     # /Zc:throwingNew - let codegen assume `operator new` will never return null
     # /Zc:inline - let codegen omit inline functions in object files
-    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /EHsc /Zc:throwingNew,inline" CACHE STRING "" FORCE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /EHsc /std:c++latest /Zc:throwingNew,inline" CACHE STRING "" FORCE)
 
     # /MDd - Multi-threaded Debug Runtime DLL
     set(CMAKE_C_FLAGS_DEBUG   "/Od /MDd" CACHE STRING "" FORCE)
@@ -240,10 +245,17 @@ if (ENABLE_QT)
     endif()
 
     find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
+
+    if (ENABLE_QT_TRANSLATION)
+        find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})
+    endif()
 endif()
 
 if (ENABLE_WEB_SERVICE)
     add_definitions(-DENABLE_WEB_SERVICE)
+endif()
+if (CITRA_ENABLE_COMPATIBILITY_REPORTING)
+    add_definitions(-DCITRA_ENABLE_COMPATIBILITY_REPORTING)
 endif()
 
 # Platform-specific library requirements

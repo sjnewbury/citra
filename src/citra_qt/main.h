@@ -7,6 +7,7 @@
 #include <memory>
 #include <QMainWindow>
 #include <QTimer>
+#include <QTranslator>
 #include "core/core.h"
 #include "core/hle/service/am/am.h"
 #include "ui_main.h"
@@ -15,6 +16,7 @@ class AboutDialog;
 class Config;
 class EmuThread;
 class GameList;
+enum class GameListOpenTarget;
 class GImageInfo;
 class GPUCommandListWidget;
 class GPUCommandStreamWidget;
@@ -77,6 +79,7 @@ private:
     void InitializeHotkeys();
 
     void SetDefaultUIGeometry();
+    void SyncMenuUISettings();
     void RestoreUIState();
 
     void ConnectWidgetEvents();
@@ -126,9 +129,10 @@ private slots:
     void OnStartGame();
     void OnPauseGame();
     void OnStopGame();
+    void OnMenuReportCompatibility();
     /// Called whenever a user selects a game in the game list widget.
     void OnGameListLoadFile(QString game_path);
-    void OnGameListOpenSaveFolder(u64 program_id);
+    void OnGameListOpenFolder(u64 program_id, GameListOpenTarget target);
     void OnMenuLoadFile();
     void OnMenuInstallCIA();
     void OnUpdateProgress(size_t written, size_t total);
@@ -136,11 +140,13 @@ private slots:
     /// Called whenever a user selects the "File->Select Game List Root" menu item
     void OnMenuSelectGameListRoot();
     void OnMenuRecentFile();
-    void OnSwapScreens();
     void OnConfigure();
     void OnToggleFilterBar();
     void OnDisplayTitleBars(bool);
     void ToggleFullscreen();
+    void ChangeScreenLayout();
+    void ToggleScreenLayout();
+    void OnSwapScreens();
     void ShowFullscreen();
     void HideFullscreen();
     void ToggleWindowMode();
@@ -151,9 +157,12 @@ private slots:
     void OnUpdateFound(bool found, bool error);
     void OnCheckForUpdates();
     void OnOpenUpdater();
+    void OnLanguageChanged(const QString& locale);
 
 private:
     void UpdateStatusBar();
+    void LoadTranslation();
+    void SetupUIStrings();
 
     Ui::MainWindow ui;
 
@@ -191,6 +200,8 @@ private:
     bool defer_update_prompt = false;
 
     QAction* actions_recent_files[max_recent_files_item];
+
+    QTranslator translator;
 
 protected:
     void dropEvent(QDropEvent* event) override;
