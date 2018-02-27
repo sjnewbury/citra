@@ -98,8 +98,9 @@ void GMainWindow::ShowCallouts() {
 }
 
 GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
-    // register size_t to use in slots and signals
+    // register types to use in slots and signals
     qRegisterMetaType<size_t>("size_t");
+    qRegisterMetaType<Service::AM::InstallStatus>("Service::AM::InstallStatus");
 
     LoadTranslation();
 
@@ -385,6 +386,8 @@ void GMainWindow::ConnectWidgetEvents() {
     connect(&status_bar_update_timer, &QTimer::timeout, this, &GMainWindow::UpdateStatusBar);
 
     connect(this, &GMainWindow::UpdateProgress, this, &GMainWindow::OnUpdateProgress);
+    connect(this, &GMainWindow::CIAInstallReport, this, &GMainWindow::OnCIAInstallReport);
+    connect(this, &GMainWindow::CIAInstallFinished, this, &GMainWindow::OnCIAInstallFinished);
 }
 
 void GMainWindow::ConnectMenuEvents() {
@@ -794,24 +797,28 @@ void GMainWindow::OnMenuSelectGameListRoot() {
 }
 
 void GMainWindow::OnMenuInstallCIA() {
-    QString filepath = QFileDialog::getOpenFileName(
-        this, tr("Load File"), UISettings::values.roms_path,
+    QStringList filepaths = QFileDialog::getOpenFileNames(
+        this, tr("Load Files"), UISettings::values.roms_path,
         tr("3DS Installation File (*.CIA*)") + ";;" + tr("All Files (*.*)"));
-    if (filepath.isEmpty())
+    if (filepaths.isEmpty())
         return;
 
     ui.action_Install_CIA->setEnabled(false);
     progress_bar->show();
-    watcher = new QFutureWatcher<Service::AM::InstallStatus>;
-    QFuture<Service::AM::InstallStatus> f = QtConcurrent::run([&, filepath] {
+
+    QtConcurrent::run([&, filepaths] {
+        QString current_path;
+        Service::AM::InstallStatus status;
         const auto cia_progress = [&](size_t written, size_t total) {
             emit UpdateProgress(written, total);
         };
-        return Service::AM::InstallCIA(filepath.toStdString(), cia_progress);
+        for (const auto current_path : filepaths) {
+            status = Service::AM::InstallCIA(current_path.toStdString(), cia_progress);
+            emit CIAInstallReport(status, current_path);
+        }
+        emit CIAInstallFinished();
+        return;
     });
-    connect(watcher, &QFutureWatcher<Service::AM::InstallStatus>::finished, this,
-            &GMainWindow::OnCIAInstallFinished);
-    watcher->setFuture(f);
 }
 
 void GMainWindow::OnUpdateProgress(size_t written, size_t total) {
@@ -819,32 +826,37 @@ void GMainWindow::OnUpdateProgress(size_t written, size_t total) {
     progress_bar->setValue(written);
 }
 
-void GMainWindow::OnCIAInstallFinished() {
-    progress_bar->hide();
-    progress_bar->setValue(0);
-    switch (watcher->future()) {
+void GMainWindow::OnCIAInstallReport(Service::AM::InstallStatus status, QString filepath) {
+    QString filename = QFileInfo(filepath).fileName();
+    switch (status) {
     case Service::AM::InstallStatus::Success:
-        this->statusBar()->showMessage(tr("The file has been installed successfully."));
+        this->statusBar()->showMessage(tr("%1 has been installed successfully.").arg(filename));
         break;
     case Service::AM::InstallStatus::ErrorFailedToOpenFile:
         QMessageBox::critical(this, tr("Unable to open File"),
-                              tr("Could not open the selected file"));
+                              tr("Could not open %1").arg(filename));
         break;
     case Service::AM::InstallStatus::ErrorAborted:
         QMessageBox::critical(
             this, tr("Installation aborted"),
-            tr("The installation was aborted. Please see the log for more details"));
+            tr("The installation of %1 was aborted. Please see the log for more details")
+                .arg(filename));
         break;
     case Service::AM::InstallStatus::ErrorInvalid:
-        QMessageBox::critical(this, tr("Invalid File"), tr("The selected file is not a valid CIA"));
+        QMessageBox::critical(this, tr("Invalid File"), tr("%1 is not a valid CIA").arg(filename));
         break;
     case Service::AM::InstallStatus::ErrorEncrypted:
         QMessageBox::critical(this, tr("Encrypted File"),
-                              tr("The file that you are trying to install must be decrypted "
-                                 "before being used with Citra. A real 3DS is required."));
+                              tr("%1 must be decrypted "
+                                 "before being used with Citra. A real 3DS is required.")
+                                  .arg(filename));
         break;
     }
-    delete watcher;
+}
+
+void GMainWindow::OnCIAInstallFinished() {
+    progress_bar->hide();
+    progress_bar->setValue(0);
     ui.action_Install_CIA->setEnabled(true);
 }
 
