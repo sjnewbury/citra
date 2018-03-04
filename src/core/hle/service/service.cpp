@@ -26,6 +26,7 @@
 #include "core/hle/service/err_f.h"
 #include "core/hle/service/frd/frd.h"
 #include "core/hle/service/fs/archive.h"
+#include "core/hle/service/fs/fs_user.h"
 #include "core/hle/service/gsp/gsp.h"
 #include "core/hle/service/gsp_lcd.h"
 #include "core/hle/service/hid/hid.h"
@@ -149,15 +150,15 @@ void ServiceFrameworkBase::ReportUnimplementedFunction(u32* cmd_buf, const Funct
     int num_params = header.normal_params_size + header.translate_params_size;
     std::string function_name = info == nullptr ? fmt::format("{:#08x}", cmd_buf[0]) : info->name;
 
-    fmt::MemoryWriter w;
-    w.write("function '{}': port='{}' cmd_buf={{[0]={:#x}", function_name, service_name,
-            cmd_buf[0]);
+    fmt::memory_buffer buf;
+    fmt::format_to(buf, "function '{}': port='{}' cmd_buf={{[0]={:#x}", function_name, service_name,
+                   cmd_buf[0]);
     for (int i = 1; i <= num_params; ++i) {
-        w.write(", [{}]={:#x}", i, cmd_buf[i]);
+        fmt::format_to(buf, ", [{}]={:#x}", i, cmd_buf[i]);
     }
-    w << '}';
+    buf.push_back('}');
 
-    LOG_ERROR(Service, "unknown / unimplemented %s", w.c_str());
+    LOG_ERROR(Service, "unknown / unimplemented %s", fmt::to_string(buf).c_str());
     // TODO(bunnei): Hack - ignore error
     cmd_buf[1] = 0;
 }
@@ -233,16 +234,17 @@ void Init() {
     MIC::InstallInterfaces(*SM::g_service_manager);
     NWM::InstallInterfaces(*SM::g_service_manager);
 
+    FS::InstallInterfaces(*SM::g_service_manager);
     FS::ArchiveInit();
     ACT::Init();
-    AM::Init();
+    AM::InstallInterfaces(*SM::g_service_manager);
     APT::InstallInterfaces(*SM::g_service_manager);
     BOSS::Init();
     CAM::InstallInterfaces(*SM::g_service_manager);
     CECD::Init();
     CFG::Init();
     DLP::Init();
-    FRD::Init();
+    FRD::InstallInterfaces(*SM::g_service_manager);
     GSP::InstallInterfaces(*SM::g_service_manager);
     HID::InstallInterfaces(*SM::g_service_manager);
     IR::InstallInterfaces(*SM::g_service_manager);
@@ -250,7 +252,7 @@ void Init() {
     NDM::Init();
     NEWS::Init();
     NFC::Init();
-    NIM::Init();
+    NIM::InstallInterfaces(*SM::g_service_manager);
     NWM::Init();
     PTM::InstallInterfaces(*SM::g_service_manager);
     QTM::Init();
@@ -270,15 +272,12 @@ void Init() {
 /// Shutdown ServiceManager
 void Shutdown() {
     NFC::Shutdown();
-    NIM::Shutdown();
     NEWS::Shutdown();
     NDM::Shutdown();
-    FRD::Shutdown();
     DLP::Shutdown();
     CFG::Shutdown();
     CECD::Shutdown();
     BOSS::Shutdown();
-    AM::Shutdown();
     FS::ArchiveShutdown();
 
     SM::g_service_manager = nullptr;
