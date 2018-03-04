@@ -1,3 +1,24 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 9b6f6a96fa8e6203e912f52b757155420cb00cbd
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|c39d868f33abb2a83726af576d63d95dfde997a7|Canary Base|j-selby|true|
+|[3469](undefined)|54af348cfc425f6341f7f8c1af70015b383e9593| Service/FRD: convert to ServiceFramework |wwylele|true|
+|[3444](undefined)|1f87766b8673756973d02c90e05bd29fde77e466|UDS: Add non zero mac address to the shared page|jroweboy|true|
+|[3440](undefined)|d8ac3a3435cd487e21172e5ca7f260d5a84d04d2|File_Sys: Add a size dependent delay for each file read|B3n30|true|
+|[3281](undefined)|18456ff9e6a8659adb2b859c556cfa17cf638ee1|Texture Cache Rework|jroweboy|true|
+|[3073](undefined)|8867d26fcab5323c8970c743db5f11f556320c59|Citra-qt: Add multiplayer ui|jroweboy|false|
+|[3071](undefined)|3f96a08984b481fbbbf40ec33903f47efeb3cdb1|Network: Added an executable to host an dedicated room for local wifi|B3n30|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
