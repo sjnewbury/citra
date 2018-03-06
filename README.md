@@ -1,3 +1,20 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: d7301e721eb9c20b37714c6e76df8db915cc3857
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|47604ead2e2508425062673c700e718c355678e9|Canary Base|j-selby|true|
+|[3469](undefined)|54af348cfc425f6341f7f8c1af70015b383e9593| Service/FRD: convert to ServiceFramework |wwylele|true|
+|[3073](undefined)|8867d26fcab5323c8970c743db5f11f556320c59|Citra-qt: Add multiplayer ui|jroweboy|false|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
