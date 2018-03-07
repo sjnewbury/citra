@@ -903,7 +903,7 @@ void NWM_UDS::SendTo(Kernel::HLERequestContext& ctx) {
     u8 data_channel = rp.Pop<u8>();
     rp.Skip(1, false);
     u32 data_size = rp.Pop<u32>();
-    u32 flags = rp.Pop<u32>();
+    u8 flags = rp.Pop<u8>();
 
     std::vector<u8> input_buffer = rp.PopStaticBuffer();
     ASSERT(input_buffer.size() >= data_size);
@@ -925,7 +925,39 @@ void NWM_UDS::SendTo(Kernel::HLERequestContext& ctx) {
         return;
     }
 
-    // TODO(B3N30): Do something with the flags.
+    Network::MacAddress dest_address;
+
+    if (!(flags & 0x1) || (flags >> 2)) {
+        LOG_ERROR(Service_NWM, "Unexpected flags 0x%02X", flags);
+    }
+
+    if (flags & (0x1 << 1)) {
+        // Broadcast and don't listen to the dest node id
+        dest_address = Network::BroadcastMac;
+    } else {
+        if (connection_status.status == static_cast<u32>(NetworkStatus::ConnectedAsHost)) {
+            // Send from host to specific client
+            auto destination =
+                std::find_if(node_map.begin(), node_map.end(), [dest_node_id](const auto& node) {
+                    return node.second == dest_node_id;
+                });
+            if (destination != node_map.end()) {
+                rb.Push(ResultCode(ErrorDescription::NotFound, ErrorModule::UDS,
+                                   ErrorSummary::WrongArgument, ErrorLevel::Status));
+                return;
+            }
+            dest_address = destination->first;
+        } else if (dest_node_id != 0) {
+            // TODO(B3N30): Find a way to store the mac address together with the node id on the clients
+            // if necessary
+            ASSERT_MSG(
+                false,
+                "Direct messages from the one client to another client aren't implemented yet");
+        } else {
+            // Send message to host
+            dest_address = network_info.host_mac_address;
+        }
+    }
 
     constexpr size_t MaxSize = 0x5C6;
     if (data_size > MaxSize) {
@@ -944,12 +976,8 @@ void NWM_UDS::SendTo(Kernel::HLERequestContext& ctx) {
     // and encapsulate the payload.
 
     Network::WifiPacket packet;
-    // Data frames are sent to the host, who then decides where to route it to. If we're the host,
-    // just directly broadcast the frame.
-    if (connection_status.status == static_cast<u32>(NetworkStatus::ConnectedAsHost))
-        packet.destination_address = Network::BroadcastMac;
-    else
-        packet.destination_address = network_info.host_mac_address;
+
+    packet.destination_address = dest_address;
     packet.channel = network_channel;
     packet.data = std::move(data_payload);
     packet.type = Network::WifiPacket::PacketType::Data;
