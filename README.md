@@ -1,3 +1,23 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 4ad2efe05b5d5e651bfee1da98137fb1c63e2185
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|47604ead2e2508425062673c700e718c355678e9|Canary Base|j-selby|true|
+|[3484](undefined)|6a8960eec8c99a3d366c98f572db3f25bfead5b6|pica/lighting: compute highlight clamp after one-/two-sided diffuse pass|wwylele|true|
+|[3481](undefined)|e34c2326291c200f3bf0cac575dfa7014e278761|NWM_UDS:: Check flags in SendTo|B3n30|true|
+|[3476](undefined)|ff00b3b649c27a27831c6c83dd8b82fd946fdd79|Service/NFC: convert to ServiceFramework|wwylele|true|
+|[3470](undefined)|61069d2b67777f73ce7f7277385b7bc94311cf61|Service/NEWS: convert to ServiceFramework |wwylele|false|
+|[3073](undefined)|21b36ee4e7c8c863ead28cc25163f23ed903a051|Citra-qt: Add multiplayer ui|jroweboy|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
