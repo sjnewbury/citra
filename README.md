@@ -1,3 +1,25 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 2e5e2444414fcb72ea86411eb2310b0bfbe9d2f8
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[22](undefined)|f9a1088b73fe1fe4cc9613d5d93f8d588fba8050|Glvtx configuration options for LibRetro|j-selby|true|
+|[21](undefined)|4d706b0316d1425a51351d390e43ee2a982c6b40|Canary Base|j-selby|true|
+|[3499](undefined)|88b1f64907ee45842d672358a4a60d1018b7726e|Convert PICA Shaders to GLSL|jroweboy|true|
+|[3498](undefined)|ea82203780d8f0666d48cc07a3700fb121f6e30c| Service/CFG: convert to ServiceFramework |wwylele|true|
+|[3489](undefined)|29d6e050445df9d5c78faaf02e0ea5024a8097b8|NWM_ UDS:Let connected clients handle the eapol packet|B3n30|true|
+|[3484](undefined)|92c7bb9d20c0d33cf579f36093c90d49af7394ca|pica/lighting: compute highlight clamp after one-/two-sided diffuse pass|wwylele|true|
+|[3481](undefined)|ac836b7b0eafda82f838ec25a2500bed839166a3|NWM_UDS:: Check flags in SendTo|B3n30|true|
+|[3073](undefined)|4f658dd8accf3557f784e33bbcc1e6d08f086bc1|Citra-qt: Add multiplayer ui|jroweboy|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
