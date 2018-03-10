@@ -21,6 +21,8 @@ option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 option(CITRA_USE_BUNDLED_CURL "FOR MINGW ONLY: Download curl configured against winssl instead of openssl" OFF)
 
+option(DISABLE_CLANG_TARGET "Disables the Clang format check" ON)
+
 if (ENABLE_WEB_SERVICE AND CITRA_USE_BUNDLED_CURL AND WINDOWS AND MSVC)
     message("Turning off use bundled curl as msvc can compile curl on cpr")
     SET(CITRA_USE_BUNDLED_CURL OFF CACHE BOOL "" FORCE)
@@ -290,7 +292,7 @@ find_program(CLANG_FORMAT
           clang-format
     PATHS ${CMAKE_BINARY_DIR}/externals)
 # if find_program doesn't find it, try to download from externals
-if (NOT CLANG_FORMAT)
+if (NOT CLANG_FORMAT AND NOT DISABLE_CLANG_TARGET)
     if (WIN32)
         message(STATUS "Clang format not found! Downloading...")
         set(CLANG_FORMAT "${CMAKE_BINARY_DIR}/externals/clang-format${CLANG_FORMAT_POSTFIX}.exe")
@@ -308,7 +310,7 @@ if (NOT CLANG_FORMAT)
     endif()
 endif()
 
-if (CLANG_FORMAT)
+if (CLANG_FORMAT AND NOT DISABLE_CLANG_TARGET)
     set(SRCS ${CMAKE_SOURCE_DIR}/src)
     set(CCOMMENT "Running clang format against all the .h and .cpp files in src/")
     if (WIN32)
