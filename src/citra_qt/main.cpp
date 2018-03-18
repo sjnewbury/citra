@@ -1018,6 +1018,7 @@ void GMainWindow::ToggleScreenLayout() {
     }
 
     Settings::values.layout_option = new_layout;
+    SyncMenuUISettings();
     Settings::Apply();
 }
 
