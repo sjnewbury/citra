@@ -170,13 +170,15 @@ add_definitions(-DSINGLETHREADED)
 set_property(DIRECTORY APPEND PROPERTY
     COMPILE_DEFINITIONS $<$<CONFIG:Debug>:_DEBUG> $<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
+math(EXPR EMU_ARCH_BITS ${CMAKE_SIZEOF_VOID_P}*8)
+add_definitions(-DEMU_ARCH_BITS=${EMU_ARCH_BITS})
 
 # System imported libraries
 # ======================
 
-find_package(Boost 1.63.0 QUIET)
+find_package(Boost 1.66.0 QUIET)
 if (NOT Boost_FOUND)
-    message(STATUS "Boost 1.63.0 or newer not found, falling back to externals")
+    message(STATUS "Boost 1.66.0 or newer not found, falling back to externals")
 
     set(BOOST_ROOT "${CMAKE_SOURCE_DIR}/externals/boost")
     set(Boost_NO_SYSTEM_PATHS OFF)

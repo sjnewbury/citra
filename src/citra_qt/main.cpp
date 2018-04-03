@@ -20,6 +20,7 @@
 #include "citra_qt/compatdb.h"
 #include "citra_qt/configuration/config.h"
 #include "citra_qt/configuration/configure_dialog.h"
+#include "citra_qt/debugger/console.h"
 #include "citra_qt/debugger/graphics/graphics.h"
 #include "citra_qt/debugger/graphics/graphics_breakpoints.h"
 #include "citra_qt/debugger/graphics/graphics_cmdlists.h"
@@ -34,12 +35,12 @@
 #include "citra_qt/main.h"
 #include "citra_qt/ui_settings.h"
 #include "citra_qt/updater/updater.h"
+#include "common/common_paths.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
 #include "common/logging/text_formatter.h"
 #include "common/microprofile.h"
-#include "common/platform.h"
 #include "common/scm_rev.h"
 #include "common/scope_exit.h"
 #include "common/string_util.h"
@@ -52,6 +53,13 @@
 
 #ifdef QT_STATICPLUGIN
 Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin);
+#endif
+
+#ifdef _WIN32
+extern "C" {
+// tells Nvidia drivers to use the dedicated GPU by default on laptops with switchable graphics
+__declspec(dllexport) unsigned long NvOptimusEnablement = 0x00000001;
+}
 #endif
 
 /**
@@ -369,6 +377,7 @@ void GMainWindow::RestoreUIState() {
 
     ui.action_Show_Status_Bar->setChecked(UISettings::values.show_status_bar);
     statusBar()->setVisible(ui.action_Show_Status_Bar->isChecked());
+    Debugger::ToggleConsole();
 }
 
 void GMainWindow::ConnectWidgetEvents() {
@@ -1011,6 +1020,7 @@ void GMainWindow::ToggleScreenLayout() {
     }
 
     Settings::values.layout_option = new_layout;
+    SyncMenuUISettings();
     Settings::Apply();
 }
 
@@ -1295,8 +1305,7 @@ void GMainWindow::SyncMenuUISettings() {
 #endif
 
 int main(int argc, char* argv[]) {
-    Log::Filter log_filter(Log::Level::Info);
-    Log::SetFilter(&log_filter);
+    Log::AddBackend(std::make_unique<Log::ColorConsoleBackend>());
 
     MicroProfileOnThreadCreate("Frontend");
     SCOPE_EXIT({ MicroProfileShutdown(); });
@@ -1314,7 +1323,12 @@ int main(int argc, char* argv[]) {
 
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
+    Log::Filter log_filter;
     log_filter.ParseFilterString(Settings::values.log_filter);
+    Log::SetGlobalFilter(log_filter);
+    FileUtil::CreateFullPath(FileUtil::GetUserPath(D_LOGS_IDX));
+    Log::AddBackend(
+        std::make_unique<Log::FileBackend>(FileUtil::GetUserPath(D_LOGS_IDX) + LOG_FILE));
 
     main_window.show();
     return app.exec();
