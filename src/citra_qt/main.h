@@ -5,15 +5,19 @@
 #pragma once
 
 #include <memory>
+#include <QLabel>
 #include <QMainWindow>
 #include <QTimer>
 #include <QTranslator>
+#include "common/announce_multiplayer_room.h"
 #include "core/core.h"
 #include "core/hle/service/am/am.h"
+#include "network/network.h"
 #include "ui_main.h"
 
 class AboutDialog;
 class Config;
+class ClickableLabel;
 class EmuThread;
 class GameList;
 enum class GameListOpenTarget;
@@ -25,6 +29,7 @@ class GraphicsTracingWidget;
 class GraphicsVertexShaderWidget;
 class GRenderWindow;
 class MicroProfileDialog;
+class MultiplayerState;
 class ProfilerWidget;
 template <typename>
 class QFutureWatcher;
@@ -50,6 +55,9 @@ class GMainWindow : public QMainWindow {
 public:
     void filterBarSetChecked(bool state);
     void UpdateUITheme();
+    void ChangeRoomState();
+
+    GameList* game_list;
     GMainWindow();
     ~GMainWindow();
 
@@ -173,7 +181,8 @@ private:
     Ui::MainWindow ui;
 
     GRenderWindow* render_window;
-    GameList* game_list;
+
+    QFutureWatcher<Service::AM::InstallStatus>* watcher = nullptr;
 
     // Status bar elements
     QProgressBar* progress_bar = nullptr;
@@ -183,6 +192,7 @@ private:
     QLabel* emu_frametime_label = nullptr;
     QTimer status_bar_update_timer;
 
+    MultiplayerState* multiplayer_state = nullptr;
     std::unique_ptr<Config> config;
 
     // Whether emulation is currently running in Citra.
