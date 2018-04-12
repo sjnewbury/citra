@@ -1,3 +1,25 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: db660afe8aeac6deeb692e2816fbe7797e589826
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[22](undefined)|f99923a228bb69b374c7069c32bc1dc37813804d|Glvtx configuration options for LibRetro|j-selby|true|
+|[21](undefined)|e8a9c9d506f9c70fd4653f2f2d92fc48b3d5d499|Canary Base|j-selby|true|
+|[3639](undefined)|7e7de7d3ab6cf292d6e480111b3ca2d9614821da|gl_rasterizer_cache: exit FillTextureCube when address is invalid|wwylele|true|
+|[3611](undefined)|2a7d0ec4be28c2fe25548cbea45dc9a9e67d3f96|citra-qt: Fix the stuck in fullscreen bug.|adityaruplaha|true|
+|[3566](undefined)|e1dd792087ff5462175fa55e8f7448cc06c80eab|citra_qt: camera integration|zhaowenlan1779|false|
+|[3499](undefined)|0a1b90779d8a9ad5ef87d5323b16cde27075fcfa|Convert PICA Shaders to GLSL|jroweboy|true|
+|[3463](undefined)|99b2d97259248cc25510f5a02bbcb3b815063d23|citra-qt: Show Game Compatibility within Citra|FearlessTobi|true|
+|[3073](undefined)|55486501b927a12cdbfad2fb3c8556a34a445769|Citra-qt: Add multiplayer ui|jroweboy|false|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
