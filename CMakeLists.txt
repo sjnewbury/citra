@@ -19,6 +19,11 @@ CMAKE_DEPENDENT_OPTION(CITRA_USE_BUNDLED_QT "Download bundled Qt binaries" ON "E
 option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
+option(ENABLE_OPENCV "Enable the OpenCV camera implementation" OFF)
+
+if (NOT ENABLE_QT)
+    set(ENABLE_OPENCV OFF)
+endif()
 
 option(DISABLE_CLANG_TARGET "Disables the Clang format check" ON)
 
@@ -176,6 +181,15 @@ if (NOT Boost_FOUND)
     find_package(Boost QUIET REQUIRED)
 endif()
 
+if (ENABLE_OPENCV)
+    find_package(OpenCV COMPONENTS core videoio imgproc)
+    if (NOT OpenCV_FOUND)
+        message(WARNING "OpenCV not found, disabling OpenCVCamera")
+
+        set(ENABLE_OPENCV OFF)
+    endif()
+endif()
+
 # Prefer the -pthread flag on Linux.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
@@ -214,7 +228,7 @@ endif()
 if (ENABLE_QT)
     if (CITRA_USE_BUNDLED_QT)
         if (MSVC14 AND ARCHITECTURE_x86_64)
-            set(QT_VER qt-5.7-msvc2015_64)
+            set(QT_VER qt-5.10.0-msvc2017_64)
         else()
             message(FATAL_ERROR "No bundled Qt binaries for your toolchain. Disable CITRA_USE_BUNDLED_QT and provide your own.")
         endif()
@@ -230,7 +244,7 @@ if (ENABLE_QT)
         set(QT_PREFIX_HINT)
     endif()
 
-    find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL ${QT_PREFIX_HINT})
+    find_package(Qt5 REQUIRED COMPONENTS Widgets OpenGL Multimedia ${QT_PREFIX_HINT})
 
     if (ENABLE_QT_TRANSLATION)
         find_package(Qt5 REQUIRED COMPONENTS LinguistTools ${QT_PREFIX_HINT})

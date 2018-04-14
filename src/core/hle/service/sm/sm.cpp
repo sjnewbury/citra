@@ -48,6 +48,16 @@ ResultVal<Kernel::SharedPtr<Kernel::ServerPort>> ServiceManager::RegisterService
     return MakeResult<Kernel::SharedPtr<Kernel::ServerPort>>(std::move(server_port));
 }
 
+ResultVal<Kernel::SharedPtr<Kernel::ServerPort>> ServiceManager::RegisterService(
+    ServiceFrameworkBase& service) {
+    const std::string name = service.GetServiceName();
+    const int max_sessions = service.GetMaxSessions();
+
+    registered_service_frameworks.emplace(name, service);
+
+    return RegisterService(name, max_sessions);
+}
+
 ResultVal<Kernel::SharedPtr<Kernel::ClientPort>> ServiceManager::GetServicePort(
     const std::string& name) {
 

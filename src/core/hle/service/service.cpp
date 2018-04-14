@@ -125,7 +125,7 @@ ServiceFrameworkBase::~ServiceFrameworkBase() = default;
 
 void ServiceFrameworkBase::InstallAsService(SM::ServiceManager& service_manager) {
     ASSERT(port == nullptr);
-    port = service_manager.RegisterService(service_name, max_sessions).Unwrap();
+    port = service_manager.RegisterService(*this).Unwrap();
     port->SetHleHandler(shared_from_this());
 }
 

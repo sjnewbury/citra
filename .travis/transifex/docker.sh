@@ -8,6 +8,7 @@ set -x
 echo -e "\e[1m\e[33mInstalling dependencies...\e[0m"
 apk update
 apk add build-base cmake python3-dev qt5-qttools-dev
+apk add opencv --update-cache --repository http://dl-3.alpinelinux.org/alpine/edge/testing/ --allow-untrusted
 
 pip3 install transifex-client
 
@@ -18,7 +19,7 @@ tx --version
 
 cd /citra
 mkdir build && cd build
-cmake .. -DENABLE_QT_TRANSLATION=ON -DGENERATE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release -DENABLE_SDL2=OFF
+cmake .. -DENABLE_QT_TRANSLATION=ON -DGENERATE_QT_TRANSLATION=ON -DCMAKE_BUILD_TYPE=Release -DENABLE_SDL2=OFF -DENABLE_OPENCV=ON
 make translation
 cd ..
 

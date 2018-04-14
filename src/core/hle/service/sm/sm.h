@@ -42,6 +42,7 @@ public:
 
     ResultVal<Kernel::SharedPtr<Kernel::ServerPort>> RegisterService(std::string name,
                                                                      unsigned int max_sessions);
+    ResultVal<Kernel::SharedPtr<Kernel::ServerPort>> RegisterService(ServiceFrameworkBase& service);
     ResultVal<Kernel::SharedPtr<Kernel::ClientPort>> GetServicePort(const std::string& name);
     ResultVal<Kernel::SharedPtr<Kernel::ClientSession>> ConnectToService(const std::string& name);
 
@@ -50,6 +51,9 @@ private:
 
     /// Map of registered services, retrieved using GetServicePort or ConnectToService.
     std::unordered_map<std::string, Kernel::SharedPtr<Kernel::ClientPort>> registered_services;
+
+    /// Map of registered ServiceFrameworks for pausing and stopping
+    std::unordered_map<std::string, ServiceFrameworkBase&> registered_service_frameworks;
 };
 
 extern std::shared_ptr<ServiceManager> g_service_manager;

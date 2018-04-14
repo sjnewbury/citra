@@ -771,7 +771,7 @@ void Module::Interface::SetFrameRate(Kernel::HLERequestContext& ctx) {
     if (camera_select.IsValid()) {
         for (int camera : camera_select) {
             cam->cameras[camera].frame_rate = frame_rate;
-            // TODO(wwylele): consider hinting the actual camera with the expected frame rate
+            cam->cameras[camera].impl->SetFrameRate(frame_rate);
         }
         rb.Push(RESULT_SUCCESS);
     } else {

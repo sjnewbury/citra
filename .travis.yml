@@ -41,7 +41,7 @@ matrix:
       script: "./.travis/macos/build.sh"
       after_success: "./.travis/macos/upload.sh"
     - os: linux
-      env: NAME="linux build (frozen versions of dependencies)"
+      env: NAME="linux build (frozen versions of dependencies without opencv)"
       sudo: required
       dist: trusty
       services: docker
