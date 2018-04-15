@@ -16,6 +16,11 @@
 #include <QtWidgets>
 #include "citra_qt/aboutdialog.h"
 #include "citra_qt/bootmanager.h"
+#ifdef ENABLE_OPENCV_CAMERA
+#include "citra_qt/camera/opencv_camera.h"
+#endif
+#include "citra_qt/camera/qt_multimedia_camera.h"
+#include "citra_qt/camera/still_image_camera.h"
 #include "citra_qt/compatdb.h"
 #include "citra_qt/configuration/config.h"
 #include "citra_qt/configuration/configure_dialog.h"
@@ -880,6 +885,7 @@ void GMainWindow::OnMenuRecentFile() {
 }
 
 void GMainWindow::OnStartGame() {
+    Camera::QtMultimediaCameraHandler::onEmulationResume();
     emu_thread->SetRunning(true);
     qRegisterMetaType<Core::System::ResultStatus>("Core::System::ResultStatus");
     qRegisterMetaType<std::string>("std::string");
@@ -895,7 +901,7 @@ void GMainWindow::OnStartGame() {
 
 void GMainWindow::OnPauseGame() {
     emu_thread->SetRunning(false);
-
+    Camera::QtMultimediaCameraHandler::onEmulationPause();
     ui.action_Start->setEnabled(true);
     ui.action_Pause->setEnabled(false);
     ui.action_Stop->setEnabled(true);
@@ -1330,6 +1336,14 @@ int main(int argc, char* argv[]) {
     GMainWindow main_window;
     // After settings have been loaded by GMainWindow, apply the filter
     log_filter.ParseFilterString(Settings::values.log_filter);
+
+    // Register CameraFactory
+    Camera::RegisterFactory("image", std::make_unique<Camera::StillImageCameraFactory>());
+#ifdef ENABLE_OPENCV_CAMERA
+    Camera::RegisterFactory("opencv", std::make_unique<Camera::OpenCVCameraFactory>());
+#endif
+    Camera::RegisterFactory("qt", std::make_unique<Camera::QtMultimediaCameraFactory>());
+    Camera::QtMultimediaCameraHandler::Init();
 
     main_window.show();
     return app.exec();
