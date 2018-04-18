@@ -131,6 +131,7 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
 
     show();
 
+    game_list->LoadCompatibilityList();
     game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
 
     // Show one-time "callout" messages to the user
@@ -285,8 +286,8 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
     RegisterHotkey("Main Window", "Start Emulation");
-    RegisterHotkey("Main Window", "Swap Screens", QKeySequence(tr("F9")));
-    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence(tr("F10")));
+    RegisterHotkey("Main Window", "Swap Screens", QKeySequence("F9"));
+    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence("F10"));
     RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
     RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
                    Qt::ApplicationShortcut);
