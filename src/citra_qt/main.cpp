@@ -31,8 +31,10 @@
 #include "citra_qt/game_list.h"
 #include "citra_qt/hotkeys.h"
 #include "citra_qt/main.h"
+#include "citra_qt/multiplayer/state.h"
 #include "citra_qt/ui_settings.h"
 #include "citra_qt/updater/updater.h"
+#include "citra_qt/util/clickable_label.h"
 #include "common/logging/backend.h"
 #include "common/logging/filter.h"
 #include "common/logging/log.h"
@@ -115,6 +117,8 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
     default_theme_paths = QIcon::themeSearchPaths();
     UpdateUITheme();
 
+    Network::Init();
+
     InitializeWidgets();
     InitializeDebugWidgets();
     InitializeRecentFileMenuActions();
@@ -131,7 +135,8 @@ GMainWindow::GMainWindow() : config(new Config()), emu_thread(nullptr) {
 
     show();
 
-    game_list->PopulateAsync(UISettings::values.gamedir, UISettings::values.gamedir_deepscan);
+    game_list->LoadCompatibilityList();
+    game_list->PopulateAsync(UISettings::values.gamedirs);
 
     // Show one-time "callout" messages to the user
     ShowCallouts();
@@ -152,6 +157,7 @@ GMainWindow::~GMainWindow() {
         delete render_window;
 
     Pica::g_debug_context.reset();
+    Network::Shutdown();
 }
 
 void GMainWindow::InitializeWidgets() {
@@ -163,6 +169,14 @@ void GMainWindow::InitializeWidgets() {
 
     game_list = new GameList(this);
     ui.horizontalLayout->addWidget(game_list);
+
+    game_list_placeholder = new GameListPlaceholder(this);
+    ui.horizontalLayout->addWidget(game_list_placeholder);
+    game_list_placeholder->setVisible(false);
+
+    multiplayer_state = new MultiplayerState(this, game_list->GetModel(), ui.action_Leave_Room,
+                                             ui.action_Show_Room);
+    multiplayer_state->setVisible(false);
 
     // Setup updater
     updater = new Updater(this);
@@ -198,6 +212,8 @@ void GMainWindow::InitializeWidgets() {
         label->setContentsMargins(4, 0, 4, 0);
         statusBar()->addPermanentWidget(label, 0);
     }
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusText(), 0);
+    statusBar()->addPermanentWidget(multiplayer_state->GetStatusIcon(), 0);
     statusBar()->setVisible(true);
 
     // Removes an ugly inner border from the status bar widgets under Linux
@@ -285,8 +301,8 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 void GMainWindow::InitializeHotkeys() {
     RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
     RegisterHotkey("Main Window", "Start Emulation");
-    RegisterHotkey("Main Window", "Swap Screens", QKeySequence(tr("F9")));
-    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence(tr("F10")));
+    RegisterHotkey("Main Window", "Swap Screens", QKeySequence("F9"));
+    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence("F10"));
     RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
     RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
                    Qt::ApplicationShortcut);
@@ -379,7 +395,12 @@ void GMainWindow::RestoreUIState() {
 
 void GMainWindow::ConnectWidgetEvents() {
     connect(game_list, &GameList::GameChosen, this, &GMainWindow::OnGameListLoadFile);
+    connect(game_list, &GameList::OpenDirectory, this, &GMainWindow::OnGameListOpenDirectory);
     connect(game_list, &GameList::OpenFolderRequested, this, &GMainWindow::OnGameListOpenFolder);
+    connect(game_list, &GameList::AddDirectory, this, &GMainWindow::OnGameListAddDirectory);
+    connect(game_list_placeholder, &GameListPlaceholder::AddDirectory, this,
+            &GMainWindow::OnGameListAddDirectory);
+    connect(game_list, &GameList::ShowList, this, &GMainWindow::OnGameListShowList);
 
     connect(this, &GMainWindow::EmulationStarting, render_window,
             &GRenderWindow::OnEmulationStarting);
@@ -397,8 +418,6 @@ void GMainWindow::ConnectMenuEvents() {
     // File
     connect(ui.action_Load_File, &QAction::triggered, this, &GMainWindow::OnMenuLoadFile);
     connect(ui.action_Install_CIA, &QAction::triggered, this, &GMainWindow::OnMenuInstallCIA);
-    connect(ui.action_Select_Game_List_Root, &QAction::triggered, this,
-            &GMainWindow::OnMenuSelectGameListRoot);
     connect(ui.action_Exit, &QAction::triggered, this, &QMainWindow::close);
 
     // Emulation
@@ -417,6 +436,19 @@ void GMainWindow::ConnectMenuEvents() {
     ui.action_Show_Filter_Bar->setShortcut(tr("CTRL+F"));
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
+
+    // Multiplayer
+    connect(ui.action_View_Lobby, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnViewLobby);
+    connect(ui.action_Start_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCreateRoom);
+    connect(ui.action_Leave_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnCloseRoom);
+    connect(ui.action_Connect_To_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnDirectConnectToRoom);
+    connect(ui.action_Show_Room, &QAction::triggered, multiplayer_state,
+            &MultiplayerState::OnOpenNetworkRoom);
+
     ui.action_Fullscreen->setShortcut(GetHotkey("Main Window", "Fullscreen", this)->key());
     ui.action_Screen_Layout_Swap_Screens->setShortcut(
         GetHotkey("Main Window", "Swap Screens", this)->key());
@@ -637,6 +669,7 @@ void GMainWindow::BootGame(const QString& filename) {
     registersWidget->OnDebugModeEntered();
     if (ui.action_Single_Window_Mode->isChecked()) {
         game_list->hide();
+        game_list_placeholder->hide();
     }
     status_bar_update_timer.start(2000);
 
@@ -676,7 +709,10 @@ void GMainWindow::ShutdownGame() {
     ui.action_Stop->setEnabled(false);
     ui.action_Report_Compatibility->setEnabled(false);
     render_window->hide();
-    game_list->show();
+    if (game_list->isEmpty())
+        game_list_placeholder->show();
+    else
+        game_list->show();
     game_list->setFilterFocus();
 
     // Disable status bar updates
@@ -772,6 +808,47 @@ void GMainWindow::OnGameListOpenFolder(u64 program_id, GameListOpenTarget target
     QDesktopServices::openUrl(QUrl::fromLocalFile(qpath));
 }
 
+void GMainWindow::OnGameListOpenDirectory(QString directory) {
+    QString path;
+    if (directory == "INSTALLED") {
+        path =
+            QString::fromStdString(FileUtil::GetUserPath(D_SDMC_IDX).c_str() +
+                                   std::string("Nintendo "
+                                               "3DS/00000000000000000000000000000000/"
+                                               "00000000000000000000000000000000/title/00040000"));
+    } else if (directory == "SYSTEM") {
+        path =
+            QString::fromStdString(FileUtil::GetUserPath(D_NAND_IDX).c_str() +
+                                   std::string("00000000000000000000000000000000/title/00040010"));
+    } else {
+        path = directory;
+    }
+    if (QFileInfo::exists(path)) {
+        QMessageBox::critical(this, tr("Error Opening %1 Folder").arg(path),
+                              tr("Folder does not exist!"));
+        return;
+    }
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
+void GMainWindow::OnGameListAddDirectory() {
+    QString dir_path = QFileDialog::getExistingDirectory(this, tr("Select Directory"));
+    if (dir_path.isEmpty())
+        return;
+    UISettings::GameDir gamedir{dir_path, false, true};
+    if (!UISettings::values.gamedirs.contains(gamedir)) {
+        UISettings::values.gamedirs.append(gamedir);
+        game_list->PopulateAsync(UISettings::values.gamedirs);
+    } else {
+        NGLOG_WARNING(Frontend, "Selected directory is already in the game list");
+    }
+}
+
+void GMainWindow::OnGameListShowList(bool show) {
+    game_list->setVisible(show);
+    game_list_placeholder->setVisible(!show);
+};
+
 void GMainWindow::OnMenuLoadFile() {
     QString extensions;
     for (const auto& piece : game_list->supported_file_extensions)
@@ -786,14 +863,6 @@ void GMainWindow::OnMenuLoadFile() {
         UISettings::values.roms_path = QFileInfo(filename).path();
 
         BootGame(filename);
-    }
-}
-
-void GMainWindow::OnMenuSelectGameListRoot() {
-    QString dir_path = QFileDialog::getExistingDirectory(this, tr("Select Directory"));
-    if (!dir_path.isEmpty()) {
-        UISettings::values.gamedir = dir_path;
-        game_list->PopulateAsync(dir_path, UISettings::values.gamedir_deepscan);
     }
 }
 
@@ -1032,6 +1101,7 @@ void GMainWindow::OnConfigure() {
     if (result == QDialog::Accepted) {
         configureDialog.applyConfiguration();
         UpdateUITheme();
+        emit UpdateThemedIcons();
         SyncMenuUISettings();
         config->Save();
     }
@@ -1185,7 +1255,7 @@ void GMainWindow::closeEvent(QCloseEvent* event) {
         ShutdownGame();
 
     render_window->close();
-
+    multiplayer_state->Close();
     QWidget::closeEvent(event);
 }
 
@@ -1251,7 +1321,6 @@ void GMainWindow::UpdateUITheme() {
         QIcon::setThemeName(":/icons/default");
     }
     QIcon::setThemeSearchPaths(theme_paths);
-    emit UpdateThemedIcons();
 }
 
 void GMainWindow::LoadTranslation() {

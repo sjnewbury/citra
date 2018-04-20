@@ -5,13 +5,29 @@
 #pragma once
 
 #include <atomic>
+#include <map>
+#include <unordered_map>
+#include <QCoreApplication>
+#include <QFileInfo>
 #include <QImage>
+#include <QObject>
+#include <QPainter>
 #include <QRunnable>
 #include <QStandardItem>
 #include <QString>
+#include "citra_qt/ui_settings.h"
 #include "citra_qt/util/util.h"
+#include "common/logging/log.h"
 #include "common/string_util.h"
 #include "core/loader/smdh.h"
+
+enum class GameListItemType {
+    Game = QStandardItem::UserType + 1,
+    CustomDir = QStandardItem::UserType + 2,
+    InstalledDir = QStandardItem::UserType + 3,
+    SystemDir = QStandardItem::UserType + 4,
+    AddDir = QStandardItem::UserType + 5
+};
 
 /**
  * Gets the game icon from SMDH data.
@@ -40,6 +56,23 @@ static QPixmap GetDefaultIcon(bool large) {
 }
 
 /**
+ * Creates a circle pixmap from a specified color
+ * @param color The color the pixmap shall have
+ * @return QPixmap circle pixmap
+ */
+static QPixmap CreateCirclePixmapFromColor(const QColor& color) {
+    QPixmap circle_pixmap(16, 16);
+    circle_pixmap.fill(Qt::transparent);
+
+    QPainter painter(&circle_pixmap);
+    painter.setPen(color);
+    painter.setBrush(color);
+    painter.drawEllipse(0, 0, 15, 15);
+
+    return circle_pixmap;
+}
+
+/**
  * Gets the short game title from SMDH data.
  * @param smdh SMDH data
  * @param language title language
@@ -50,8 +83,25 @@ static QString GetQStringShortTitleFromSMDH(const Loader::SMDH& smdh,
     return QString::fromUtf16(smdh.GetShortTitle(language).data());
 }
 
-class GameListItem : public QStandardItem {
+struct CompatStatus {
+    QString color;
+    const char* text;
+    const char* tooltip;
+};
 
+// When this is put in a class, MSVS builds crash when closing Citra
+// clang-format off
+const static inline std::map<QString, CompatStatus> status_data = {
+{ "0", { "#5c93ed", QT_TRANSLATE_NOOP("GameList", "Perfect"),    QT_TRANSLATE_NOOP("GameList", "Game functions flawless with no audio or graphical glitches, all tested functionality works as intended without\nany workarounds needed.") } },
+{ "1", { "#47d35c", QT_TRANSLATE_NOOP("GameList", "Great"),      QT_TRANSLATE_NOOP("GameList", "Game functions with minor graphical or audio glitches and is playable from start to finish. May require some\nworkarounds.") } },
+{ "2", { "#94b242", QT_TRANSLATE_NOOP("GameList", "Okay"),       QT_TRANSLATE_NOOP("GameList", "Game functions with major graphical or audio glitches, but game is playable from start to finish with\nworkarounds.") } },
+{ "3", { "#f2d624", QT_TRANSLATE_NOOP("GameList", "Bad"),        QT_TRANSLATE_NOOP("GameList", "Game functions, but with major graphical or audio glitches. Unable to progress in specific areas due to glitches\neven with workarounds.") } },
+{ "4", { "#FF0000", QT_TRANSLATE_NOOP("GameList", "Intro/Menu"), QT_TRANSLATE_NOOP("GameList", "Game is completely unplayable due to major graphical or audio glitches. Unable to progress past the Start\nScreen.") } },
+{ "5", { "#828282", QT_TRANSLATE_NOOP("GameList", "Won't Boot"), QT_TRANSLATE_NOOP("GameList", "The game crashes when attempting to startup.") } },
+{ "99",{ "#000000", QT_TRANSLATE_NOOP("GameList", "Not Tested"), QT_TRANSLATE_NOOP("GameList", "The game has not yet been tested.") } }, };
+// clang-format on
+
+class GameListItem : public QStandardItem {
 public:
     GameListItem() : QStandardItem() {}
     GameListItem(const QString& string) : QStandardItem(string) {}
@@ -65,11 +115,14 @@ public:
  * If this class receives valid SMDH data, it will also display game icons and titles.
  */
 class GameListItemPath : public GameListItem {
-
 public:
     static const int FullPathRole = Qt::UserRole + 1;
     static const int TitleRole = Qt::UserRole + 2;
     static const int ProgramIdRole = Qt::UserRole + 3;
+
+    int type() const override {
+        return static_cast<int>(GameListItemType::Game);
+    }
 
     GameListItemPath() : GameListItem() {}
     GameListItemPath(const QString& game_path, const std::vector<u8>& smdh_data, u64 program_id)
@@ -107,15 +160,45 @@ public:
     }
 };
 
+class GameListItemCompat : public GameListItem {
+public:
+    static const int CompatNumberRole = Qt::UserRole + 1;
+
+    int type() const override {
+        return static_cast<int>(GameListItemType::Game);
+    }
+
+    GameListItemCompat() = default;
+    explicit GameListItemCompat(const QString compatiblity) {
+        auto iterator = status_data.find(compatiblity);
+        if (iterator == status_data.end()) {
+            NGLOG_WARNING(Frontend, "Invalid compatibility number {}", compatiblity.toStdString());
+            return;
+        }
+        CompatStatus status = iterator->second;
+        setData(compatiblity, CompatNumberRole);
+        setText(QCoreApplication::translate("GameList", status.text));
+        setToolTip(QCoreApplication::translate("GameList", status.tooltip));
+        setData(CreateCirclePixmapFromColor(status.color), Qt::DecorationRole);
+    }
+
+    bool operator<(const QStandardItem& other) const override {
+        return data(CompatNumberRole) < other.data(CompatNumberRole);
+    }
+};
+
 /**
  * A specialization of GameListItem for size values.
  * This class ensures that for every numerical size value it holds (in bytes), a correct
  * human-readable string representation will be displayed to the user.
  */
 class GameListItemSize : public GameListItem {
-
 public:
     static const int SizeRole = Qt::UserRole + 1;
+
+    int type() const override {
+        return static_cast<int>(GameListItemType::Game);
+    }
 
     GameListItemSize() : GameListItem() {}
     GameListItemSize(const qulonglong size_bytes) : GameListItem() {
@@ -144,6 +227,49 @@ public:
     }
 };
 
+class GameListDir : public GameListItem {
+public:
+    int type() const override {
+        return static_cast<int>(dir_type);
+    }
+    explicit GameListDir(UISettings::GameDir& directory,
+                         GameListItemType type = GameListItemType::CustomDir)
+        : dir_type{type} {
+        UISettings::GameDir* gamedir = &directory;
+        setData(QVariant::fromValue(gamedir), GamedirRole);
+        switch (dir_type) {
+        case GameListItemType::InstalledDir:
+            setData(QIcon::fromTheme("sd_card").pixmap(48), Qt::DecorationRole);
+            setData("Installed Titles", Qt::DisplayRole);
+            break;
+        case GameListItemType::SystemDir:
+            setData(QIcon::fromTheme("chip").pixmap(48), Qt::DecorationRole);
+            setData("System Titles", Qt::DisplayRole);
+            break;
+        case GameListItemType::CustomDir:
+            QString icon_name = QFileInfo::exists(gamedir->path) ? "folder" : "bad_folder";
+            setData(QIcon::fromTheme(icon_name).pixmap(48), Qt::DecorationRole);
+            setData(gamedir->path, Qt::DisplayRole);
+            break;
+        };
+    };
+    static const int GamedirRole = Qt::UserRole + 1;
+
+private:
+    GameListItemType dir_type;
+};
+
+class GameListAddDir : public GameListItem {
+public:
+    int type() const override {
+        return static_cast<int>(GameListItemType::AddDir);
+    }
+    explicit GameListAddDir() {
+        setData(QIcon::fromTheme("plus").pixmap(48), Qt::DecorationRole);
+        setData("Add New Game Directory", Qt::DisplayRole);
+    }
+};
+
 /**
  * Asynchronous worker object for populating the game list.
  * Communicates with other threads through Qt's signal/slot system.
@@ -152,8 +278,9 @@ class GameListWorker : public QObject, public QRunnable {
     Q_OBJECT
 
 public:
-    GameListWorker(QString dir_path, bool deep_scan)
-        : QObject(), QRunnable(), dir_path(dir_path), deep_scan(deep_scan) {}
+    explicit GameListWorker(QList<UISettings::GameDir>& gamedirs,
+                            const std::unordered_map<std::string, QString>& compatibility_list)
+        : QObject(), QRunnable(), gamedirs(gamedirs), compatibility_list(compatibility_list) {}
 
 public slots:
     /// Starts the processing of directory tree information.
@@ -165,21 +292,24 @@ signals:
     /**
      * The `EntryReady` signal is emitted once an entry has been prepared and is ready
      * to be added to the game list.
-     * @param entry_items a list with `QStandardItem`s that make up the columns of the new entry.
+     * @param entry_items a list with `QStandardItem`s that make up the columns of the new
+     * entry.
      */
-    void EntryReady(QList<QStandardItem*> entry_items);
+    void DirEntryReady(GameListDir* entry_items);
+    void EntryReady(QList<QStandardItem*> entry_items, GameListDir* parent_dir);
 
     /**
-     * After the worker has traversed the game directory looking for entries, this signal is emmited
-     * with a list of folders that should be watched for changes as well.
+     * After the worker has traversed the game directory looking for entries, this signal is
+     * emitted with a list of folders that should be watched for changes as well.
      */
     void Finished(QStringList watch_list);
 
 private:
     QStringList watch_list;
-    QString dir_path;
-    bool deep_scan;
+    const std::unordered_map<std::string, QString>& compatibility_list;
+    QList<UISettings::GameDir>& gamedirs;
     std::atomic_bool stop_processing;
 
-    void AddFstEntriesToGameList(const std::string& dir_path, unsigned int recursion = 0);
+    void AddFstEntriesToGameList(const std::string& dir_path, unsigned int recursion,
+                                 GameListDir* parent_dir);
 };

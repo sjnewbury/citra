@@ -7,6 +7,7 @@
 #include "citra_qt/ui_settings.h"
 #include "common/file_util.h"
 #include "input_common/main.h"
+#include "network/network.h"
 
 Config::Config() {
     // TODO: Don't hardcode the path; let the frontend decide where to put the config files.
@@ -162,6 +163,12 @@ void Config::ReadValues() {
         qt_config->value("verify_endpoint_url", "https://services.citra-emu.org/api/profile")
             .toString()
             .toStdString();
+    Settings::values.announce_multiplayer_room_endpoint_url =
+        qt_config
+            ->value("announce_multiplayer_room_endpoint_url",
+                    "https://services.citra-emu.org/api/multiplayer/rooms")
+            .toString()
+            .toStdString();
     Settings::values.citra_username = qt_config->value("citra_username").toString().toStdString();
     Settings::values.citra_token = qt_config->value("citra_token").toString().toStdString();
     qt_config->endGroup();
@@ -191,8 +198,34 @@ void Config::ReadValues() {
     qt_config->beginGroup("Paths");
     UISettings::values.roms_path = qt_config->value("romsPath").toString();
     UISettings::values.symbols_path = qt_config->value("symbolsPath").toString();
-    UISettings::values.gamedir = qt_config->value("gameListRootDir", ".").toString();
-    UISettings::values.gamedir_deepscan = qt_config->value("gameListDeepScan", false).toBool();
+    UISettings::values.gamedir_depreciated = qt_config->value("gameListRootDir", ".").toString();
+    UISettings::values.gamedir_depreciated_deepscan =
+        qt_config->value("gameListDeepScan", false).toBool();
+    int size = qt_config->beginReadArray("gamedirs");
+    for (int i = 0; i < size; ++i) {
+        qt_config->setArrayIndex(i);
+        UISettings::GameDir gamedir;
+        gamedir.path = qt_config->value("path").toString();
+        gamedir.deep_scan = qt_config->value("deep_scan", false).toBool();
+        gamedir.expanded = qt_config->value("expanded", true).toBool();
+        UISettings::values.gamedirs.append(gamedir);
+    }
+    qt_config->endArray();
+    // create NAND and SD card directories if empty, these are not removable through the UI, also
+    // carries over old game list settings if present
+    if (UISettings::values.gamedirs.isEmpty()) {
+        UISettings::GameDir gamedir;
+        gamedir.path = "INSTALLED";
+        gamedir.expanded = true;
+        UISettings::values.gamedirs.append(gamedir);
+        gamedir.path = "SYSTEM";
+        UISettings::values.gamedirs.append(gamedir);
+        if (UISettings::values.gamedir_depreciated != ".") {
+            gamedir.path = UISettings::values.gamedir_depreciated;
+            gamedir.deep_scan = UISettings::values.gamedir_depreciated_deepscan;
+            UISettings::values.gamedirs.append(gamedir);
+        }
+    }
     UISettings::values.recent_files = qt_config->value("recentFiles").toStringList();
     UISettings::values.language = qt_config->value("language", "").toString();
     qt_config->endGroup();
@@ -224,6 +257,22 @@ void Config::ReadValues() {
     UISettings::values.confirm_before_closing = qt_config->value("confirmClose", true).toBool();
     UISettings::values.first_start = qt_config->value("firstStart", true).toBool();
     UISettings::values.callout_flags = qt_config->value("calloutFlags", 0).toUInt();
+
+    qt_config->beginGroup("Multiplayer");
+    UISettings::values.nickname = qt_config->value("nickname", "").toString();
+    UISettings::values.ip = qt_config->value("ip", "").toString();
+    UISettings::values.port = qt_config->value("port", Network::DefaultRoomPort).toString();
+    UISettings::values.room_nickname = qt_config->value("room_nickname", "").toString();
+    UISettings::values.room_name = qt_config->value("room_name", "").toString();
+    UISettings::values.room_port = qt_config->value("room_port", "24872").toString();
+    bool ok;
+    UISettings::values.host_type = qt_config->value("host_type", 0).toUInt(&ok);
+    if (!ok) {
+        UISettings::values.host_type = 0;
+    }
+    UISettings::values.max_player = qt_config->value("max_player", 8).toUInt();
+    UISettings::values.game_id = qt_config->value("game_id", 0).toULongLong();
+    qt_config->endGroup();
 
     qt_config->endGroup();
 }
@@ -320,6 +369,9 @@ void Config::SaveValues() {
                         QString::fromStdString(Settings::values.telemetry_endpoint_url));
     qt_config->setValue("verify_endpoint_url",
                         QString::fromStdString(Settings::values.verify_endpoint_url));
+    qt_config->setValue(
+        "announce_multiplayer_room_endpoint_url",
+        QString::fromStdString(Settings::values.announce_multiplayer_room_endpoint_url));
     qt_config->setValue("citra_username", QString::fromStdString(Settings::values.citra_username));
     qt_config->setValue("citra_token", QString::fromStdString(Settings::values.citra_token));
     qt_config->endGroup();
@@ -344,8 +396,15 @@ void Config::SaveValues() {
     qt_config->beginGroup("Paths");
     qt_config->setValue("romsPath", UISettings::values.roms_path);
     qt_config->setValue("symbolsPath", UISettings::values.symbols_path);
-    qt_config->setValue("gameListRootDir", UISettings::values.gamedir);
-    qt_config->setValue("gameListDeepScan", UISettings::values.gamedir_deepscan);
+    qt_config->beginWriteArray("gamedirs");
+    for (int i = 0; i < UISettings::values.gamedirs.size(); ++i) {
+        qt_config->setArrayIndex(i);
+        const auto& gamedir = UISettings::values.gamedirs.at(i);
+        qt_config->setValue("path", gamedir.path);
+        qt_config->setValue("deep_scan", gamedir.deep_scan);
+        qt_config->setValue("expanded", gamedir.expanded);
+    }
+    qt_config->endArray();
     qt_config->setValue("recentFiles", UISettings::values.recent_files);
     qt_config->setValue("language", UISettings::values.language);
     qt_config->endGroup();
@@ -365,6 +424,18 @@ void Config::SaveValues() {
     qt_config->setValue("confirmClose", UISettings::values.confirm_before_closing);
     qt_config->setValue("firstStart", UISettings::values.first_start);
     qt_config->setValue("calloutFlags", UISettings::values.callout_flags);
+
+    qt_config->beginGroup("Multiplayer");
+    qt_config->setValue("nickname", UISettings::values.nickname);
+    qt_config->setValue("ip", UISettings::values.ip);
+    qt_config->setValue("port", UISettings::values.port);
+    qt_config->setValue("room_nickname", UISettings::values.room_nickname);
+    qt_config->setValue("room_name", UISettings::values.room_name);
+    qt_config->setValue("room_port", UISettings::values.room_port);
+    qt_config->setValue("host_type", UISettings::values.host_type);
+    qt_config->setValue("max_player", UISettings::values.max_player);
+    qt_config->setValue("game_id", UISettings::values.game_id);
+    qt_config->endGroup();
 
     qt_config->endGroup();
 }
