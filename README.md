@@ -1,3 +1,24 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 85e47f1ea7013eb9a0f27ec4b946d71e04f970c1
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|0d1df0f513fe20b2fb3d085df711b3158364faa7|Canary Base|j-selby|true|
+|[3746](undefined)|e289c87e421378a63e360259fe93a1158f7b229a|Service/NDM: convert to ServiceFramework|wwylele|true|
+|[3729](undefined)|5f3b6401b558d3f645610f22d05453a969be3647|gl_rasterizer: implement shadow map 2D|wwylele|true|
+|[3724](undefined)|8e1e52cad917a80d121d7ad6aa4236d5bcc0a56e|gl_rasterizer: Remove redundant scissor state change.|degasus|true|
+|[3714](undefined)|08a38370b0ece0302f33ab778d4764e962953dd8|video_core/command_processor: correctly handles 0xFFFF index as a normal index|wwylele|true|
+|[3706](undefined)|3f0e017e1b5e2107cb1e502235065bd448f5c178|Use Travis CI to build MinGW packages|liushuyu|true|
+|[3617](undefined)|cc138ab550a59afd5239756a599eade6c788b9c5|QT: Add support for multiple game directories|BreadFish64|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra Emulator
