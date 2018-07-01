@@ -105,6 +105,10 @@ private:
     size_t bytes_written;
 };
 
+void Init();
+
+void Destroy();
+
 void AddBackend(std::unique_ptr<Backend> backend);
 
 void RemoveBackend(const std::string& backend_name);

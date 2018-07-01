@@ -1454,6 +1454,8 @@ int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "C");
 
     GMainWindow main_window;
+    Log::Init();
+
     // After settings have been loaded by GMainWindow, apply the filter
     Log::Filter log_filter;
     log_filter.ParseFilterString(Settings::values.log_filter);
