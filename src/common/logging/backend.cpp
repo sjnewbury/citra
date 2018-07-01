@@ -29,9 +29,37 @@ namespace Log {
  */
 class Impl {
 public:
-    static Impl& Instance() {
-        static Impl backend;
-        return backend;
+    Impl() {
+        backend_thread = std::thread([&] {
+            Entry entry;
+            auto write_logs = [&](Entry& e) {
+                std::lock_guard<std::mutex> lock(writing_mutex);
+                for (const auto& backend : backends) {
+                    backend->Write(e);
+                }
+            };
+            while (true) {
+                std::unique_lock<std::mutex> lock(message_mutex);
+                message_cv.wait(lock, [&] { return !running || message_queue.Pop(entry); });
+                if (!running) {
+                    break;
+                }
+                write_logs(entry);
+            }
+            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a case
+            // where a system is repeatedly spamming logs even on close.
+            constexpr int MAX_LOGS_TO_WRITE = 100;
+            int logs_written = 0;
+            while (logs_written++ < MAX_LOGS_TO_WRITE && message_queue.Pop(entry)) {
+                write_logs(entry);
+            }
+        });
+    }
+
+    ~Impl() {
+        running = false;
+        message_cv.notify_one();
+        backend_thread.join();
     }
 
     Impl(Impl const&) = delete;
@@ -74,39 +102,6 @@ public:
     }
 
 private:
-    Impl() {
-        backend_thread = std::thread([&] {
-            Entry entry;
-            auto write_logs = [&](Entry& e) {
-                std::lock_guard<std::mutex> lock(writing_mutex);
-                for (const auto& backend : backends) {
-                    backend->Write(e);
-                }
-            };
-            while (true) {
-                std::unique_lock<std::mutex> lock(message_mutex);
-                message_cv.wait(lock, [&] { return !running || message_queue.Pop(entry); });
-                if (!running) {
-                    break;
-                }
-                write_logs(entry);
-            }
-            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a case
-            // where a system is repeatedly spamming logs even on close.
-            constexpr int MAX_LOGS_TO_WRITE = 100;
-            int logs_written = 0;
-            while (logs_written++ < MAX_LOGS_TO_WRITE && message_queue.Pop(entry)) {
-                write_logs(entry);
-            }
-        });
-    }
-
-    ~Impl() {
-        running = false;
-        message_cv.notify_one();
-        backend_thread.join();
-    }
-
     std::atomic_bool running{true};
     std::mutex message_mutex, writing_mutex;
     std::condition_variable message_cv;
@@ -115,6 +110,16 @@ private:
     Common::MPSCQueue<Log::Entry> message_queue;
     Filter filter;
 };
+
+std::unique_ptr<Impl> g_logger;
+
+void Init() {
+    g_logger = std::make_unique<Impl>();
+}
+
+void Destroy() {
+    g_logger = nullptr;
+}
 
 void ConsoleBackend::Write(const Entry& entry) {
     PrintMessage(entry);
@@ -262,31 +267,31 @@ Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsign
 }
 
 void SetGlobalFilter(const Filter& filter) {
-    Impl::Instance().SetGlobalFilter(filter);
+    g_logger->SetGlobalFilter(filter);
 }
 
 void AddBackend(std::unique_ptr<Backend> backend) {
-    Impl::Instance().AddBackend(std::move(backend));
+    g_logger->AddBackend(std::move(backend));
 }
 
 void RemoveBackend(std::string_view backend_name) {
-    Impl::Instance().RemoveBackend(backend_name);
+    g_logger->RemoveBackend(backend_name);
 }
 
 Backend* GetBackend(std::string_view backend_name) {
-    return Impl::Instance().GetBackend(backend_name);
+    return g_logger->GetBackend(backend_name);
 }
 
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
                        unsigned int line_num, const char* function, const char* format,
                        const fmt::format_args& args) {
-    auto filter = Impl::Instance().GetGlobalFilter();
+    auto filter = g_logger->GetGlobalFilter();
     if (!filter.CheckMessage(log_class, log_level))
         return;
 
     Entry entry =
         CreateEntry(log_class, log_level, filename, line_num, function, fmt::vformat(format, args));
 
-    Impl::Instance().PushEntry(std::move(entry));
+    g_logger->PushEntry(std::move(entry));
 }
 } // namespace Log

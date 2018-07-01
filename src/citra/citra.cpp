@@ -116,6 +116,8 @@ static void OnMessageReceived(const Network::ChatEntry& msg) {
 
 /// Application entry point
 int main(int argc, char** argv) {
+    Log::Init();
+
     Config config;
     int option_index = 0;
     bool use_gdbstub = Settings::values.use_gdbstub;
@@ -330,6 +332,8 @@ int main(int argc, char** argv) {
     while (emu_window->IsOpen()) {
         system.RunLoop();
     }
+
+    Log::Destroy();
 
     return 0;
 }
