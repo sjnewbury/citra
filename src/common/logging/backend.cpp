@@ -29,10 +29,6 @@ namespace Log {
  */
 class Impl {
 public:
-    static Impl& Instance() {
-        static Impl backend;
-        return backend;
-    }
 
     Impl(Impl const&) = delete;
     const Impl& operator=(Impl const&) = delete;
@@ -115,6 +111,16 @@ private:
     Common::MPSCQueue<Log::Entry> message_queue;
     Filter filter;
 };
+
+std::unique_ptr<Impl> g_logger;
+
+void Init() {
+    g_logger = std::make_unique<Impl>();
+}
+
+void Destroy() {
+    g_logger = nullptr;
+}
 
 void ConsoleBackend::Write(const Entry& entry) {
     PrintMessage(entry);
@@ -263,32 +269,31 @@ Entry CreateEntry(Class log_class, Level log_level, const char* filename, unsign
 }
 
 void SetGlobalFilter(const Filter& filter) {
-    Impl::Instance().SetGlobalFilter(filter);
+    g_logger->SetGlobalFilter(filter);
 }
 
 void AddBackend(std::unique_ptr<Backend> backend) {
-    Impl::Instance().AddBackend(std::move(backend));
+    g_logger->AddBackend(std::move(backend));
 }
 
 void RemoveBackend(std::string_view backend_name) {
-    Impl::Instance().RemoveBackend(backend_name);
+    g_logger->RemoveBackend(backend_name);
 }
 
 Backend* GetBackend(std::string_view backend_name) {
-    return Impl::Instance().GetBackend(backend_name);
+    return g_logger->GetBackend(backend_name);
 }
 
 void FmtLogMessageImpl(Class log_class, Level log_level, const char* filename,
                        unsigned int line_num, const char* function, const char* format,
                        const fmt::format_args& args) {
-    auto& instance = Impl::Instance();
-    const auto& filter = instance.GetGlobalFilter();
+    auto filter = g_logger->GetGlobalFilter();
     if (!filter.CheckMessage(log_class, log_level))
         return;
 
     Entry entry =
         CreateEntry(log_class, log_level, filename, line_num, function, fmt::vformat(format, args));
 
-    instance.PushEntry(std::move(entry));
+    g_logger->PushEntry(std::move(entry));
 }
 } // namespace Log

@@ -129,6 +129,8 @@ static void InitializeLogging() {
 
 /// Application entry point
 int main(int argc, char** argv) {
+    Log::Init();
+
     Config config;
     int option_index = 0;
     bool use_gdbstub = Settings::values.use_gdbstub;
