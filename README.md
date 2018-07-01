@@ -1,3 +1,23 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 8dc34315950bd7749d2d3192644a265e0f94b18b
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|8d8363f9c7756a1f1c56ceca7f3fb2733647c833|Canary Base|j-selby|true|
+|[3881](undefined)|f4bd39ec09ae6e4be394e56d4ab61658cd6d3ad7|Use open source Shared Font if no dumped file is available|B3n30|true|
+|[3850](undefined)|44b15a897b90ed2273bc39055e9c7f7eaa662df4|applets/swkbd: Software Keyboard Implementation|zhaowenlan1779|true|
+|[3831](undefined)|0c449cb9770f8d5c2ce6ba09323a8067d6b9ec85|citra_qt: Add a volume slider|FearlessTobi|true|
+|[3706](undefined)|34e01191c936accecbc96bdaac267edc095a8d6b|Use Travis CI to build MinGW packages|liushuyu|true|
+|[3519](undefined)|53b28cff341c55fed1007a1fdf6e8439d430a4a2|NWM_UDS:: Allow multiple BindNodes per channel|B3n30|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra
