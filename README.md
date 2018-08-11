@@ -1,3 +1,24 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 74950ce0f904e7446dc6a344b847ea63ceb2f04a
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|5833f5bb57a1b659afdb637a18ddbec57fdf5249|Canary Base|j-selby|true|
+|[4086](undefined)|ce9fa43b5bf66490a2850283131e1251670766aa|externals: Update dynarmic to 0118ee0|MerryMage|true|
+|[4069](undefined)|aa98e55a88c755759c2023e9d82d32d52d7761ea|Service::SM: Wait till client is registered|B3n30|true|
+|[4059](undefined)|8db6822ee9853da92fceebecd216770a77fc4990| citra_qt: add motion/touch config|zhaowenlan1779|true|
+|[4043](undefined)|54c94c84ea84bf36ca8c10f7b07a93bb9e09298d|Add system time configuration|B3n30|true|
+|[4012](undefined)|383dd967d1d105e16d89407424ed87ed30d73b5a|citra_qt: UI text improvements|zhaowenlan1779|true|
+|[3786](undefined)|f977ba0347c19d63c92f43a9da6669d8d8fd960b|citra-qt: Make hotkeys configurable via the GUI.|adityaruplaha|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra
