@@ -1,3 +1,25 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: 5d8e36a1a9f97846b1e929b55bbc20f0239e5138
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|611fc3fd7b8f54007ed6d80a924c0ee5fc8bf5d8|Canary Base|j-selby|true|
+|[4086](undefined)|4171cb9008345a84993dbc9eebd2bd109bb214c9|externals: Update dynarmic|MerryMage|true|
+|[4069](undefined)|aa98e55a88c755759c2023e9d82d32d52d7761ea|Service::SM: Wait till client is registered|B3n30|true|
+|[4059](undefined)|8db6822ee9853da92fceebecd216770a77fc4990| citra_qt: add motion/touch config|zhaowenlan1779|true|
+|[4043](undefined)|e2929dcd6ef6d1d230b37222436e75ebc6bb6546|Add system time configuration|B3n30|true|
+|[4012](undefined)|383dd967d1d105e16d89407424ed87ed30d73b5a|citra_qt: UI text improvements|zhaowenlan1779|true|
+|[3922](undefined)|c07c9e6594f5bff283d63724a614365b5d09459d|movie: Add Qt Movie feature|zhaowenlan1779|false|
+|[3786](undefined)|f977ba0347c19d63c92f43a9da6669d8d8fd960b|citra-qt: Make hotkeys configurable via the GUI.|adityaruplaha|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra
