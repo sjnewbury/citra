@@ -12,6 +12,14 @@ ConfigureDialog::ConfigureDialog(QWidget* parent) : QDialog(parent), ui(new Ui::
     this->setConfiguration();
     connect(ui->generalTab, &ConfigureGeneral::languageChanged, this,
             &ConfigureDialog::onLanguageChanged);
+    connect(ui->inputTab, &ConfigureInput::InputKeysChanged, ui->generalTab,
+            &ConfigureGeneral::OnInputKeysChanged);
+    connect(ui->generalTab, &ConfigureGeneral::HotkeysChanged, ui->inputTab,
+            &ConfigureInput::onHotkeysChanged);
+
+    // Synchronise lists upon initialisation
+    ui->inputTab->EmitInputKeysChanged();
+    ui->generalTab->EmitHotkeysChanged();
 }
 
 ConfigureDialog::~ConfigureDialog() {}

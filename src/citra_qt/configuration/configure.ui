@@ -44,7 +44,7 @@
        <string>Audio</string>
       </attribute>
      </widget>
-      <widget class="ConfigureCamera" name="cameraTab">
+     <widget class="ConfigureCamera" name="cameraTab">
       <attribute name="title">
        <string>Camera</string>
       </attribute>
@@ -89,7 +89,7 @@
    <header>configuration/configure_audio.h</header>
    <container>1</container>
   </customwidget>
-   <customwidget>
+  <customwidget>
    <class>ConfigureCamera</class>
    <extends>QWidget</extends>
    <header>configuration/configure_camera.h</header>

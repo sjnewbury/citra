@@ -321,25 +321,33 @@ void GMainWindow::InitializeRecentFileMenuActions() {
 }
 
 void GMainWindow::InitializeHotkeys() {
-    RegisterHotkey("Main Window", "Load File", QKeySequence::Open);
-    RegisterHotkey("Main Window", "Start Emulation");
-    RegisterHotkey("Main Window", "Continue/Pause", QKeySequence(Qt::Key_F4));
-    RegisterHotkey("Main Window", "Restart", QKeySequence(Qt::Key_F5));
-    RegisterHotkey("Main Window", "Swap Screens", QKeySequence(tr("F9")));
-    RegisterHotkey("Main Window", "Toggle Screen Layout", QKeySequence(tr("F10")));
-    RegisterHotkey("Main Window", "Fullscreen", QKeySequence::FullScreen);
-    RegisterHotkey("Main Window", "Exit Fullscreen", QKeySequence(Qt::Key_Escape),
-                   Qt::ApplicationShortcut);
-    RegisterHotkey("Main Window", "Toggle Speed Limit", QKeySequence("CTRL+Z"),
-                   Qt::ApplicationShortcut);
-    RegisterHotkey("Main Window", "Increase Speed Limit", QKeySequence("+"),
-                   Qt::ApplicationShortcut);
-    RegisterHotkey("Main Window", "Decrease Speed Limit", QKeySequence("-"),
-                   Qt::ApplicationShortcut);
     LoadHotkeys();
+
+    ui.action_Load_File->setShortcut(GetKeySequence("Main Window", "Load File"));
+    ui.action_Load_File->setShortcutContext(GetShortcutContext("Main Window", "Load File"));
+
+    ui.action_Exit->setShortcut(GetKeySequence("Main Window", "Exit Citra"));
+    ui.action_Exit->setShortcutContext(GetShortcutContext("Main Window", "Exit Citra"));
+
+    ui.action_Start->setShortcut(GetKeySequence("Main Window", "Start Emulation"));
+    ui.action_Start->setShortcutContext(GetShortcutContext("Main Window", "Start Emulation"));
+
+    ui.action_Pause->setShortcut(GetKeySequence("Main Window", "Pause Emulation"));
+    ui.action_Pause->setShortcutContext(GetShortcutContext("Main Window", "Pause Emulation"));
+
+    ui.action_Stop->setShortcut(GetKeySequence("Main Window", "Stop Emulation"));
+    ui.action_Stop->setShortcutContext(GetShortcutContext("Main Window", "Stop Emulation"));
+
+    ui.action_Show_Filter_Bar->setShortcut(GetKeySequence("Main Window", "Toggle Filter Bar"));
+    ui.action_Show_Filter_Bar->setShortcutContext(
+        GetShortcutContext("Main Window", "Toggle Filter Bar"));
+    ui.action_Show_Status_Bar->setShortcut(GetKeySequence("Main Window", "Toggle Status Bar"));
+    ui.action_Show_Status_Bar->setShortcutContext(
+        GetShortcutContext("Main Window", "Toggle Status Bar"));
 
     connect(GetHotkey("Main Window", "Load File", this), &QShortcut::activated, this,
             &GMainWindow::OnMenuLoadFile);
+
     connect(GetHotkey("Main Window", "Start Emulation", this), &QShortcut::activated, this,
             &GMainWindow::OnStartGame);
     connect(GetHotkey("Main Window", "Continue/Pause", this), &QShortcut::activated, this, [&] {
@@ -482,7 +490,6 @@ void GMainWindow::ConnectMenuEvents() {
             &GMainWindow::ToggleWindowMode);
     connect(ui.action_Display_Dock_Widget_Headers, &QAction::triggered, this,
             &GMainWindow::OnDisplayTitleBars);
-    ui.action_Show_Filter_Bar->setShortcut(tr("CTRL+F"));
     connect(ui.action_Show_Filter_Bar, &QAction::triggered, this, &GMainWindow::OnToggleFilterBar);
     connect(ui.action_Show_Status_Bar, &QAction::triggered, statusBar(), &QStatusBar::setVisible);
 
