@@ -29,6 +29,38 @@ namespace Log {
  */
 class Impl {
 public:
+    Impl() {
+        backend_thread = std::thread([&] {
+            Entry entry;
+            auto write_logs = [&](Entry& e) {
+                std::lock_guard<std::mutex> lock(writing_mutex);
+                for (const auto& backend : backends) {
+                    backend->Write(e);
+                }
+            };
+            while (true) {
+                std::unique_lock<std::mutex> lock(message_mutex);
+                message_cv.wait(lock, [&] { return !running || message_queue.Pop(entry); });
+                if (!running) {
+                    break;
+                }
+                write_logs(entry);
+            }
+            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a case
+            // where a system is repeatedly spamming logs even on close.
+            constexpr int MAX_LOGS_TO_WRITE = 100;
+            int logs_written = 0;
+            while (logs_written++ < MAX_LOGS_TO_WRITE && message_queue.Pop(entry)) {
+                write_logs(entry);
+            }
+        });
+    }
+
+    ~Impl() {
+        running = false;
+        message_cv.notify_one();
+        backend_thread.join();
+    }
 
     Impl(Impl const&) = delete;
     const Impl& operator=(Impl const&) = delete;
@@ -70,39 +102,6 @@ public:
     }
 
 private:
-    Impl() {
-        backend_thread = std::thread([&] {
-            Entry entry;
-            auto write_logs = [&](Entry& e) {
-                std::lock_guard<std::mutex> lock(writing_mutex);
-                for (const auto& backend : backends) {
-                    backend->Write(e);
-                }
-            };
-            while (true) {
-                std::unique_lock<std::mutex> lock(message_mutex);
-                message_cv.wait(lock, [&] { return !running || message_queue.Pop(entry); });
-                if (!running) {
-                    break;
-                }
-                write_logs(entry);
-            }
-            // Drain the logging queue. Only writes out up to MAX_LOGS_TO_WRITE to prevent a case
-            // where a system is repeatedly spamming logs even on close.
-            constexpr int MAX_LOGS_TO_WRITE = 100;
-            int logs_written = 0;
-            while (logs_written++ < MAX_LOGS_TO_WRITE && message_queue.Pop(entry)) {
-                write_logs(entry);
-            }
-        });
-    }
-
-    ~Impl() {
-        running = false;
-        message_cv.notify_one();
-        backend_thread.join();
-    }
-
     std::atomic_bool running{true};
     std::mutex message_mutex, writing_mutex;
     std::condition_variable message_cv;

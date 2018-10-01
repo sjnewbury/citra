@@ -4,6 +4,7 @@
 
 #include <memory>
 #include "common/logging/log.h"
+#include "core/frontend/emu_window.h"
 #include "video_core/pica.h"
 #include "video_core/renderer_base.h"
 #include "video_core/renderer_opengl/renderer_opengl.h"
@@ -27,16 +28,21 @@ std::atomic<bool> g_renderer_bg_color_update_requested;
 Core::System::ResultStatus Init(EmuWindow& emu_window) {
     Pica::Init();
 
-    g_renderer = std::make_unique<RendererOpenGL>(emu_window);
-    Core::System::ResultStatus result = g_renderer->Init();
+    if (!emu_window.ShouldDeferRendererInit()) {
+        g_renderer = std::make_unique<RendererOpenGL>(emu_window);
+        Core::System::ResultStatus result = g_renderer->Init();
 
-    if (result != Core::System::ResultStatus::Success) {
-        LOG_ERROR(Render, "initialization failed !");
+        if (result != Core::System::ResultStatus::Success) {
+            LOG_ERROR(Render, "initialization failed !");
+        } else {
+            LOG_DEBUG(Render, "initialized OK");
+        }
+
+        return result;
     } else {
-        LOG_DEBUG(Render, "initialized OK");
+        // We will come back to it later
+        return Core::System::ResultStatus::Success;
     }
-
-    return result;
 }
 
 /// Shutdown the video core

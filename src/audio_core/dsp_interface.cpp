@@ -42,6 +42,8 @@ void DspInterface::OutputFrame(StereoFrame16& frame) {
         return;
 
     fifo.Push(frame.data(), frame.size());
+
+    GetSink().OnAudioSubmission(frame.size());
 }
 
 void DspInterface::OutputCallback(s16* buffer, std::size_t num_frames) {

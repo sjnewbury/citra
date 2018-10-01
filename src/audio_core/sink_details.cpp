@@ -24,16 +24,16 @@ namespace AudioCore {
 // g_sink_details is ordered in terms of desirability, with the best choice at the top.
 const std::vector<SinkDetails> g_sink_details = {
 #ifdef HAVE_LIBRETRO
-    SinkDetails{"libretro", &std::make_unique<LibRetroSink, std::string>, &ListLibretroSinkDevices},
+    SinkDetails{"libretro", &std::make_unique<LibRetroSink, std::string>, &ListLibretroSinkDevices, true},
 #endif
 #ifdef HAVE_CUBEB
-    SinkDetails{"cubeb", &std::make_unique<CubebSink, std::string>, &ListCubebSinkDevices},
+    SinkDetails{"cubeb", &std::make_unique<CubebSink, std::string>, &ListCubebSinkDevices, false},
 #endif
 #ifdef HAVE_SDL2
-    SinkDetails{"sdl2", &std::make_unique<SDL2Sink, std::string>, &ListSDL2SinkDevices},
+    SinkDetails{"sdl2", &std::make_unique<SDL2Sink, std::string>, &ListSDL2SinkDevices, false},
 #endif
     SinkDetails{"null", &std::make_unique<NullSink, std::string>,
-                [] { return std::vector<std::string>{"null"}; }},
+                [] { return std::vector<std::string>{"null"}; }, false},
 };
 
 const SinkDetails& GetSinkDetails(std::string_view sink_id) {
