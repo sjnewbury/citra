@@ -139,7 +139,7 @@ void RendererOpenGL::SwapBuffers() {
     OpenGLState prev_state = OpenGLState::GetCurState();
     state.Apply();
 
-    render_window->SetupFramebuffer();
+    render_window.SetupFramebuffer();
 
     for (int i : {0, 1, 2}) {
         int fb_id = i == 2 ? 1 : 0;
@@ -613,7 +613,7 @@ void RendererOpenGL::DrawScreens(const Layout::FramebufferLayout& layout) {
 
     glViewport(0, 0, layout.width, layout.height);
 
-    if (render_window->NeedsClearing()) {
+    if (render_window.NeedsClearing()) {
         glClear(GL_COLOR_BUFFER_BIT);
     }
 

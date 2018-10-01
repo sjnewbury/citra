@@ -40,16 +40,21 @@ Core::System::ResultStatus Init(Frontend::EmuWindow& emu_window, Memory::MemoryS
 
     OpenGL::GLES = Settings::values.use_gles;
 
-    g_renderer = std::make_unique<OpenGL::RendererOpenGL>(emu_window);
-    Core::System::ResultStatus result = g_renderer->Init();
+    if (!emu_window.ShouldDeferRendererInit()) {
+        g_renderer = std::make_unique<OpenGL::RendererOpenGL>(emu_window);
+        Core::System::ResultStatus result = g_renderer->Init();
 
-    if (result != Core::System::ResultStatus::Success) {
-        LOG_ERROR(Render, "initialization failed !");
+        if (result != Core::System::ResultStatus::Success) {
+            LOG_ERROR(Render, "initialization failed !");
+        } else {
+            LOG_DEBUG(Render, "initialized OK");
+        }
+
+        return result;
     } else {
-        LOG_DEBUG(Render, "initialized OK");
+        // We will come back to it later
+        return Core::System::ResultStatus::Success;
     }
-
-    return result;
 }
 
 /// Shutdown the video core
