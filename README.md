@@ -1,3 +1,26 @@
+# Merge log
+
+Scroll down for the original README.md!
+
+Base revision: a0c222c00645bff70b2347ddef66767bfc303535
+
+|PR Number|Commit|Title|Author|Merge Success|
+|----|----|----|----|----|
+|[21](undefined)|1d7548856280c62bc40764e940015a5c15d1c952|Canary Base|j-selby|true|
+|[4282](undefined)|cb775eb1ba90048367510a0b8767cb56aaf577be|core, citra_qt: add frame advancing to framelimiter|zhaowenlan1779|false|
+|[4279](undefined)|deaed383572cc3f6dadf2988183a58c2e1a68410|applets: stub mii selector to always return a standard mii|FearlessTobi|true|
+|[4272](undefined)|6b31a81f7668eea23b2c3ed82cc85a72f9676611|Core: pass down Core::System reference to all services|wwylele|false|
+|[4270](undefined)|3970d86f35a20c5b87dbdd279d8c3461b2228dd0|Threaded CPU vertex shader processing|jroweboy|true|
+|[4267](undefined)|9d142f981dd4810085355b0659173d2cb0a12e7f|movie: Add clock init time to CTM header|zhaowenlan1779|true|
+|[4244](undefined)|41d53cee1f291a989315462815ba00dd522dcf2e|common/swap: add swap template for enum|wwylele|true|
+|[4229](undefined)|8cf1132b2e1f4a09176801cc2d97b646b3d2bf88|citra_qt, core: game list "Open XXX Location" improvements|zhaowenlan1779|false|
+|[4089](undefined)|80bdc4ac2d49af26e9649a6febf9efe970f9d448|[NOT FOR MERGE YET] Ignore format reinterpretation hack|jroweboy|true|
+
+
+End of merge log. You can find the original README.md below the break.
+
+------
+
 **BEFORE FILING AN ISSUE, READ THE RELEVANT SECTION IN THE [CONTRIBUTING](https://github.com/citra-emu/citra/blob/master/CONTRIBUTING.md#reporting-issues) FILE!!!**
 
 Citra
