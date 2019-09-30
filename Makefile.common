@@ -1,17 +1,16 @@
-INCFLAGS    :=  -I$(SRC_DIR)/libretro-common/include \
-                -I$(SRC_DIR) \
-                -I$(EXTERNALS_DIR) \
-                -I$(EXTERNALS_DIR)/dynarmic/include \
-                -I$(EXTERNALS_DIR)/enet/include \
-                -I$(EXTERNALS_DIR)/open_source_archives/include \
-                -I$(EXTERNALS_DIR)/fmt/include \
-                -I$(EXTERNALS_DIR)/microprofile \
-                -I$(EXTERNALS_DIR)/nihstro/include \
-                -isystem$(EXTERNALS_DIR)/boost \
-                -isystem$(EXTERNALS_DIR)/cryptopp \
-                -isystem$(EXTERNALS_DIR)/libretro \
-                -isystem$(EXTERNALS_DIR)/teakra/include \
-                -isystem$(EXTERNALS_DIR)/soundtouch/include
+INCFLAGS := -I$(SRC_DIR) \
+            -I$(EXTERNALS_DIR) \
+            -I$(EXTERNALS_DIR)/dynarmic/include \
+            -I$(EXTERNALS_DIR)/enet/include \
+            -I$(EXTERNALS_DIR)/open_source_archives/include \
+            -I$(EXTERNALS_DIR)/fmt/include \
+            -I$(EXTERNALS_DIR)/microprofile \
+            -I$(EXTERNALS_DIR)/nihstro/include \
+            -I$(EXTERNALS_DIR)/boost \
+            -I$(EXTERNALS_DIR)/cryptopp \
+            -I$(EXTERNALS_DIR)/libretro-common/include \
+            -I$(EXTERNALS_DIR)/teakra/include \
+            -I$(EXTERNALS_DIR)/soundtouch/include
 
 # Begone boost linking
 CXXFLAGS += -DBOOST_ERROR_CODE_HEADER_ONLY -DBOOST_SYSTEM_NO_LIB -DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB

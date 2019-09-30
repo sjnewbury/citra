@@ -89,19 +89,7 @@ ifeq ($(platform), unix)
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=$(SRC_DIR)/citra_libretro/link.T -Wl,--no-undefined
    LIBS +=-lpthread -lGL -ldl -lavcodec -lavformat -lavutil
-   HAVE_FFMPEG = 1
-   
-#######################################
-# Nintendo Switch (libnx)
-else ifeq ($(platform), libnx)
-   include $(DEVKITPRO)/libnx/switch_rules
-   TARGET := $(TARGET_NAME)_libretro_$(platform).a
-   DEFINES := -DSWITCH=1 -D__SWITCH__=1 -DHAVE_LIBNX=1
-   CFLAGS := $(DEFINES) -fPIE -I$(LIBNX)/include/ -I$(PORTLIBS)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -specs=$(LIBNX)/switch.specs
-   CFLAGS += -march=armv8-a -mtune=cortex-a57 -mtp=soft -mcpu=cortex-a57+crc+fp+simd -ffast-math
-   CXXFLAGS := $(ASFLAGS) $(CFLAGS)
-   STATIC_LINKING = 1
-   HAVE_GLAD = 0
+   HAVE_FFMPEG = 0
 endif
 
 ifneq (,$(findstring msvc,$(platform)))
@@ -119,7 +107,7 @@ endif
 ifeq ($(DEBUG), 1)
    CXXFLAGS += -O0 -g
 else
-   CXXFLAGS += -O2 -DNDEBUG
+   CXXFLAGS += -O3 -ffast-math -ftree-vectorize -DNDEBUG
 endif
 
 include Makefile.common
