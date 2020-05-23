@@ -9,8 +9,6 @@
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
 #include <QOpenGLFunctions>
-#include <QOpenGLFunctions_3_3_Core>
-#include <QOpenGLWindow>
 #include <QScreen>
 #include <QWindow>
 #include <fmt/format.h>
@@ -194,9 +192,6 @@ GRenderWindow::GRenderWindow(QWidget* parent_, EmuThread* emu_thread)
                             QString::fromUtf8(Common::g_scm_branch),
                             QString::fromUtf8(Common::g_scm_desc)));
     setAttribute(Qt::WA_AcceptTouchEvents);
-    auto layout = new QHBoxLayout(this);
-    layout->setMargin(0);
-    setLayout(layout);
     InputCommon::Init();
 
     this->setMouseTracking(true);
@@ -382,24 +377,13 @@ void GRenderWindow::focusOutEvent(QFocusEvent* event) {
 }
 
 void GRenderWindow::resizeEvent(QResizeEvent* event) {
-    QWidget::resizeEvent(event);
+    QOpenGLWidget::resizeEvent(event);
     OnFramebufferSizeChanged();
 }
 
 void GRenderWindow::InitRenderTarget() {
-    ReleaseRenderTarget();
-
-    first_frame = false;
-
-    GMainWindow* parent = GetMainWindow();
-    QWindow* parent_win_handle = parent ? parent->windowHandle() : nullptr;
-    child_window = new OpenGLWindow(parent_win_handle, this, QOpenGLContext::globalShareContext());
-    child_window->create();
-    child_widget = createWindowContainer(child_window, this);
-    child_widget->resize(Core::kScreenTopWidth, Core::kScreenTopHeight + Core::kScreenBottomHeight);
-
-    layout()->addWidget(child_widget);
-
+    // TODO: One of these flags might be interesting: WA_OpaquePaintEvent, WA_NoBackground,
+    // WA_DontShowOnScreen, WA_DeleteOnClose
     core_context = CreateSharedContext();
     resize(Core::kScreenTopWidth, Core::kScreenTopHeight + Core::kScreenBottomHeight);
     OnMinimalClientAreaChangeRequest(GetActiveConfig().min_client_area_size);
@@ -407,12 +391,8 @@ void GRenderWindow::InitRenderTarget() {
     BackupGeometry();
 }
 
-void GRenderWindow::ReleaseRenderTarget() {
-    if (child_widget) {
-        layout()->removeWidget(child_widget);
-        delete child_widget;
-        child_widget = nullptr;
-    }
+void GRenderWindow::initializeGL() {
+    context()->format().setSwapInterval(1);
 }
 
 void GRenderWindow::CaptureScreenshot(u32 res_scale, const QString& screenshot_path) {
@@ -443,6 +423,11 @@ void GRenderWindow::OnEmulationStarting(EmuThread* emu_thread) {
 
 void GRenderWindow::OnEmulationStopping() {
     emu_thread = nullptr;
+}
+
+void GRenderWindow::paintGL() {
+    VideoCore::g_renderer->TryPresent(100);
+    update();
 }
 
 void GRenderWindow::showEvent(QShowEvent* event) {
