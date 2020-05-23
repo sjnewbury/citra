@@ -192,7 +192,7 @@ GRenderWindow::GRenderWindow(QWidget* parent_, EmuThread* emu_thread)
                             QString::fromUtf8(Common::g_scm_branch),
                             QString::fromUtf8(Common::g_scm_desc)));
     setAttribute(Qt::WA_AcceptTouchEvents);
-    connect(this, &QOpenGLWidget::frameSwapped, this, &GRenderWindow::OnFrameSwapped);
+
     InputCommon::Init();
 
     this->setMouseTracking(true);
@@ -226,10 +226,6 @@ bool GRenderWindow::ShouldDeferRendererInit() const {
 
 bool GRenderWindow::NeedsClearing() const {
     return true;
-}
-
-void OnFrameSwapped() {
-    VideoCore::g_renderer->PresentComplete();
 }
 
 // On Qt 5.0+, this correctly gets the size of the framebuffer (pixels).
@@ -426,10 +422,6 @@ void GRenderWindow::OnEmulationStopping() {
 void GRenderWindow::paintGL() {
     VideoCore::g_renderer->Present();
     update();
-}
-
-void GRenderWindow::OnFrameSwapped() {
-    VideoCore::g_renderer->PresentComplete();
 }
 
 void GRenderWindow::showEvent(QShowEvent* event) {
