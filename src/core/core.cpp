@@ -409,12 +409,6 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window, u32 system_mo
     Service::Init(*this);
     GDBStub::DeferStart();
 
-#ifdef ENABLE_FFMPEG_VIDEO_DUMPER
-    video_dumper = std::make_unique<VideoDumper::FFmpegBackend>();
-#else
-    video_dumper = std::make_unique<VideoDumper::NullBackend>();
-#endif
-
     VideoCore::ResultStatus result = VideoCore::Init(emu_window, *memory);
     if (result != VideoCore::ResultStatus::Success) {
         switch (result) {
@@ -426,6 +420,12 @@ System::ResultStatus System::Init(Frontend::EmuWindow& emu_window, u32 system_mo
             return ResultStatus::ErrorVideoCore;
         }
     }
+
+#ifdef ENABLE_FFMPEG_VIDEO_DUMPER
+    video_dumper = std::make_unique<VideoDumper::FFmpegBackend>();
+#else
+    video_dumper = std::make_unique<VideoDumper::NullBackend>();
+#endif
 
     LOG_DEBUG(Core, "Initialized OK");
 
