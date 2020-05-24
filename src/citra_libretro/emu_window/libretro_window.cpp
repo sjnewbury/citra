@@ -2,7 +2,11 @@
 // Licensed under GPLv2 or any later version
 // Refer to the license.txt file included.
 
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 #include <libretro.h>
 
 #include "audio_core/audio_types.h"

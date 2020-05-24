@@ -4,7 +4,11 @@
 
 #include <cmath>
 
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 
 #include "citra_libretro/core_settings.h"
 #include "citra_libretro/environment.h"

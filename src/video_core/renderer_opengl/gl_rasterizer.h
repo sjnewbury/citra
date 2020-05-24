@@ -9,7 +9,11 @@
 #include <cstring>
 #include <memory>
 #include <vector>
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 #include "common/bit_field.h"
 #include "common/common_types.h"
 #include "common/vector_math.h"

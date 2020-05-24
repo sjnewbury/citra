@@ -1,5 +1,4 @@
-#ifndef _GLAD_COMPAT_H_
-#define _GLAD_COMPAT_H_
+#pragma once
 
 #include <glsym/switch/nx_gl.h>
 #include <GL/glext.h>
@@ -6881,6 +6880,4 @@ extern PFNGLCOPYIMAGESUBDATAOES __glCopyImageSubDataOES;
 
 #ifndef GL_DEPTH24_STENCIL8_OES
 #define GL_DEPTH24_STENCIL8_OES 0x88F0
-#endif
-
 #endif

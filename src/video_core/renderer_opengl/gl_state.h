@@ -5,7 +5,11 @@
 #pragma once
 
 #include <array>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 
 namespace OpenGL {
 

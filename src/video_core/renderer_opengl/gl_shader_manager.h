@@ -5,7 +5,11 @@
 #pragma once
 
 #include <memory>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "video_core/rasterizer_interface.h"
 #include "video_core/regs_lighting.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"

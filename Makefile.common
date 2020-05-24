@@ -11,7 +11,8 @@ INCFLAGS := -I$(SRC_DIR) \
             -I$(EXTERNALS_DIR)/cryptopp \
             -I$(EXTERNALS_DIR)/libretro-common/include \
             -I$(EXTERNALS_DIR)/teakra/include \
-            -I$(EXTERNALS_DIR)/soundtouch/include
+            -I$(EXTERNALS_DIR)/soundtouch/include \
+            -I$(EXTERNALS_DIR)/zstd/lib
 
 SOURCES_C   :=
 SOURCES_CXX :=
@@ -302,6 +303,10 @@ SOURCES_CXX += $(EXTERNALS_DIR)/teakra/src/ahbm.cpp \
                $(EXTERNALS_DIR)/teakra/src/teakra.cpp \
                $(EXTERNALS_DIR)/teakra/src/test_generator.cpp
 
+# Externals - Zstd
+SOURCES_C += $(sort $(wildcard $(EXTERNALS_DIR)/zstd/lib/common/*.c)) \
+             $(sort $(wildcard $(EXTERNALS_DIR)/zstd/lib/compress/*.c)) \
+             $(sort $(wildcard $(EXTERNALS_DIR)/zstd/lib/decompress/*.c))
 # Common
 SOURCES_CXX += $(SRC_DIR)/common/detached_tasks.cpp \
                $(SRC_DIR)/common/cityhash.cpp \

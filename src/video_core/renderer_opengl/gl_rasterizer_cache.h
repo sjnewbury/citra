@@ -20,7 +20,11 @@
 #endif
 #include <unordered_map>
 #include <boost/functional/hash.hpp>
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 #include "common/assert.h"
 #include "common/common_funcs.h"
 #include "common/common_types.h"

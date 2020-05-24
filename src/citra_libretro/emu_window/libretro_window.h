@@ -4,7 +4,11 @@
 
 #pragma once
 
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 
 #include <memory>
 #include <utility>

@@ -7,7 +7,11 @@
 #include <memory>
 #include <string_view>
 #include <vector>
+#ifdef HAVE_GLAD
 #include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 #include "common/common_types.h"
 #include "common/math_util.h"
 #include "video_core/renderer_opengl/gl_surface_params.h"
