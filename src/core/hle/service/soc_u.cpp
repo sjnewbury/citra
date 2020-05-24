@@ -534,7 +534,11 @@ void SOC_U::GetHostId(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx, 0x16, 0, 0);
 
     char name[128];
+#ifdef HAVE_LIBNX
+    strcpy(name, "Switch");
+#else
     gethostname(name, sizeof(name));
+#endif
     addrinfo hints = {};
     addrinfo* res;
 

@@ -15,7 +15,11 @@
 #include <utility>
 #include <vector>
 
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 
 #include "common/assert.h"
 #include "common/common_types.h"

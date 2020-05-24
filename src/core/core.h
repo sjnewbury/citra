@@ -354,8 +354,10 @@ private:
     /// Image interface
     std::shared_ptr<Frontend::ImageInterface> registered_image_interface;
 
+#ifdef HAVE_RPC
     /// RPC Server for scripting support
     std::unique_ptr<RPC::RPCServer> rpc_server;
+#endif
 
     std::unique_ptr<Service::FS::ArchiveManager> archive_manager;
 

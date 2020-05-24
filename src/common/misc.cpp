@@ -12,6 +12,19 @@
 
 #include "common/common_funcs.h"
 
+
+#ifdef HAVE_LIBNX
+#include <string.h>
+char *strerror_r (int errnum, char *buffer, size_t n)
+{
+  char *error = _strerror_r (_REENT, errnum, 1, NULL);
+
+  if (strlen (error) >= n)
+    return error;
+  return strcpy (buffer, error);
+}
+#endif
+
 // Generic function to get last error message.
 // Call directly after the command or use the error num.
 // This function might change the error code.

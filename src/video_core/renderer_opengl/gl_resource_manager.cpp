@@ -3,7 +3,11 @@
 // Refer to the license.txt file included.
 
 #include <utility>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "common/common_types.h"
 #include "common/microprofile.h"
 #include "video_core/renderer_opengl/gl_resource_manager.h"

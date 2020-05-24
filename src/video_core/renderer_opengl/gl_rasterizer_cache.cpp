@@ -14,7 +14,11 @@
 #include <utility>
 #include <vector>
 #include <boost/range/iterator_range.hpp>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "common/alignment.h"
 #include "common/bit_field.h"
 #include "common/color.h"

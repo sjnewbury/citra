@@ -72,6 +72,12 @@
 #define S_ISDIR(m) (((m)&S_IFMT) == S_IFDIR)
 #endif
 
+#ifdef HAVE_LIBNX
+#define fseeko fseek
+#define ftello ftell
+#define fileno clearerr
+#endif
+
 // This namespace has various generic functions related to files and paths.
 // The code still needs a ton of cleanup.
 // REMEMBER: strdup considered harmful!
@@ -1041,6 +1047,8 @@ std::size_t IOFile::WriteImpl(const void* data, std::size_t length, std::size_t 
 }
 
 bool IOFile::Resize(u64 size) {
+    // TODO: Impl it for libnx
+#ifndef HAVE_LIBNX
     if (!IsOpen() || 0 !=
 #ifdef _WIN32
                          // ector: _chsize sucks, not 64-bit safe
@@ -1052,6 +1060,8 @@ bool IOFile::Resize(u64 size) {
 #endif
     )
         m_good = false;
+
+#endif
 
     return m_good;
 }

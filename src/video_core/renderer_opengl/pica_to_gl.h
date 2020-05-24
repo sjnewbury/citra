@@ -6,7 +6,11 @@
 
 #include <array>
 #include <cstddef>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "common/assert.h"
 #include "common/common_types.h"
 #include "common/logging/log.h"
