@@ -7,7 +7,11 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "common/alignment.h"
 #include "common/assert.h"
 #include "common/logging/log.h"

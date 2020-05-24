@@ -31,6 +31,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef HAVE_LIBNX
+#include <arpa/inet.h>
+#endif
+
 #include "common/logging/log.h"
 #include "core/arm/arm_interface.h"
 #include "core/core.h"
@@ -1170,7 +1174,11 @@ static void Init(u16 port) {
     WSAStartup(MAKEWORD(2, 2), &InitData);
 #endif
 
+#ifdef HAVE_LIBNX
+    int tmpsock = static_cast<int>(socket(AF_INET, SOCK_STREAM, 0));
+#else
     int tmpsock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
+#endif
     if (tmpsock == -1) {
         LOG_ERROR(Debug_GDBStub, "Failed to create gdb socket");
     }

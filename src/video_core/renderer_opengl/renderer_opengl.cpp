@@ -6,7 +6,11 @@
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
+#if defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#else
 #include <glad/glad.h>
+#endif
 #include "common/assert.h"
 #include "common/bit_field.h"
 #include "common/logging/log.h"
@@ -916,10 +920,13 @@ static void APIENTRY DebugHandler(GLenum source, GLenum type, GLuint id, GLenum 
 VideoCore::ResultStatus RendererOpenGL::Init() {
     render_window.MakeCurrent();
 
+#ifndef HAVE_LIBNX
+
     if (GLAD_GL_KHR_debug) {
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback(DebugHandler, nullptr);
     }
+#endif
 
     const char* gl_version{reinterpret_cast<char const*>(glGetString(GL_VERSION))};
     const char* gpu_vendor{reinterpret_cast<char const*>(glGetString(GL_VENDOR))};

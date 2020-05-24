@@ -26,6 +26,12 @@
 #define cpu_set_t cpuset_t
 #endif
 
+
+#ifdef HAVE_LIBNX
+int pthread_getname_np(pthread_t, char *, size_t) __nonnull((2));
+int pthread_setname_np(pthread_t, const char *) __nonnull((2));
+#endif
+
 namespace Common {
 
 #ifdef _MSC_VER

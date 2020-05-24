@@ -10,7 +10,11 @@
 #include <stdlib.h>
 #include <common/file_util.h>
 
-#include "glad/glad.h"
+#ifdef HAVE_GLAD
+#include <glad/glad.h>
+#elif defined(HAVE_LIBNX)
+#include <glad_compat.h>
+#endif
 #include "libretro.h"
 
 #include "audio_core/libretro_sink.h"
@@ -379,6 +383,7 @@ void context_reset() {
     }
 
     // Check to see if the frontend provides us with OpenGL symbols
+#ifdef HAVE_GLAD
     if (emu_instance->hw_render.get_proc_address != nullptr) {
         if (!gladLoadGLLoader((GLADloadproc)load_opengl_func)) {
             LOG_CRITICAL(Frontend, "Glad failed to load (frontend-provided symbols)!");
@@ -391,6 +396,7 @@ void context_reset() {
             return;
         }
     }
+#endif
 
     // Recreate our renderer, so it can reset it's state.
     if (VideoCore::g_renderer != nullptr) {
