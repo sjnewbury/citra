@@ -132,6 +132,8 @@ public:
         case Dynarmic::A32::Exception::UndefinedInstruction:
         case Dynarmic::A32::Exception::UnpredictableInstruction:
             break;
+        case Dynarmic::A32::Exception::PreloadData:
+            return;
         case Dynarmic::A32::Exception::Breakpoint:
             if (GDBStub::IsConnected()) {
                 parent.jit->HaltExecution();
@@ -182,7 +184,7 @@ void ARM_Dynarmic::Run() {
 }
 
 void ARM_Dynarmic::Step() {
-    cb->InterpreterFallback(jit->Regs()[15], 1);
+    jit->Step();
 }
 
 void ARM_Dynarmic::SetPC(u32 pc) {

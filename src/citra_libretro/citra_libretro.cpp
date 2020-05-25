@@ -31,6 +31,10 @@
 #include "video_core/renderer_opengl/renderer_opengl.h"
 #include "video_core/video_core.h"
 
+// libretro GL State
+OpenGL::OpenGLState retro_state;
+OpenGL::OpenGLState last_emu_state;
+
 class CitraLibRetro {
 public:
     CitraLibRetro() : log_filter(Log::Level::Info) {}
@@ -327,10 +331,8 @@ void retro_run() {
         UpdateSettings();
     }
 
-    // We can't assume that the frontend has been nice and preserved all OpenGL settings. Reset.
-    auto last_state = OpenGL::OpenGLState::GetCurState();
     ResetGLState();
-    last_state.Apply();
+    last_emu_state.Apply();
 
     while (!emu_instance->emu_window->HasSubmittedFrame()) {
         auto result = Core::System::GetInstance().RunLoop();
@@ -351,6 +353,12 @@ void retro_run() {
             LibRetro::DisplayMessage(msg.c_str());
         }
     }
+
+    last_emu_state = OpenGL::OpenGLState::GetCurState();
+    retro_state.Apply();
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void* load_opengl_func(const char* name) {
@@ -487,6 +495,9 @@ bool retro_load_game(const struct retro_game_info* info) {
         LibRetro::DisplayMessage("Unknown error");
         return false;
     }
+
+    retro_state = OpenGL::OpenGLState::GetCurState();
+    last_emu_state = OpenGL::OpenGLState::GetCurState();
 
     return true;
 }

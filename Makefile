@@ -104,10 +104,16 @@ HAVE_DYNARMIC = 1
 HAVE_SSE = 1
 endif
 
+ifeq ($(ARCH), aarch64)
+DEFINES += -DARCHITECTURE_Aarch64
+HAVE_DYNARMIC = 1
+HAVE_SSE = 0
+endif
+
 ifeq ($(DEBUG), 1)
    CXXFLAGS += -O0 -g
 else
-   CXXFLAGS += -O3 -ffast-math -ftree-vectorize -DNDEBUG
+   CXXFLAGS += -O3 -ffast-math -ftree-vectorize -DNDEBUG -Wno-switch -Wno-unused-local-typedefs
 endif
 
 include Makefile.common

@@ -13,6 +13,8 @@
 #include "core/settings.h"
 #include "video_core/renderer_opengl/gl_state.h"
 
+extern OpenGL::OpenGLState retro_state;
+
 /// LibRetro expects a "default" GL state.
 void ResetGLState() {
     // Reset internal state.
@@ -54,19 +56,17 @@ EmuWindow_LibRetro::~EmuWindow_LibRetro() {}
 void EmuWindow_LibRetro::SwapBuffers() {
     submittedFrame = true;
 
-    auto current_state = OpenGL::OpenGLState::GetCurState();
-
-    ResetGLState();
-
     if (tracker != nullptr) {
         tracker->Render(width, height);
     }
 
-    LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width),
-                               static_cast<unsigned>(height), 0);
+    auto current_state = OpenGL::OpenGLState::GetCurState();
+    retro_state.Apply();
+    glActiveTexture(GL_TEXTURE0);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    ResetGLState();
-
+    LibRetro::UploadVideoFrame(RETRO_HW_FRAME_BUFFER_VALID, static_cast<unsigned>(width), static_cast<unsigned>(height), 0);
+    
     current_state.Apply();
 }
 
