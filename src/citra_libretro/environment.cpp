@@ -24,6 +24,13 @@ void UploadVideoFrame(const void* data, unsigned width, unsigned height, size_t 
     return video_cb(data, width, height, pitch);
 }
 
+retro_hw_context_type GetPreferredHWContext() {
+    retro_hw_context_type preferred_context;
+    if (!environ_cb(RETRO_ENVIRONMENT_GET_PREFERRED_HW_RENDER, &preferred_context))
+        preferred_context = RETRO_HW_CONTEXT_DUMMY;
+    return preferred_context;
+}
+
 bool SetHWSharedContext() {
     return environ_cb(RETRO_ENVIRONMENT_SET_HW_SHARED_CONTEXT, NULL);
 }
