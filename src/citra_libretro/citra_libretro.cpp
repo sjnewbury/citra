@@ -413,6 +413,47 @@ void retro_reset() {
     context_reset(); // Force the renderer to appear
 }
 
+static bool try_init_context(retro_hw_context_type context_type)
+{
+    emu_instance->hw_render.context_type = context_type;
+    emu_instance->hw_render.context_reset = context_reset;
+    emu_instance->hw_render.context_destroy = context_destroy;
+    emu_instance->hw_render.cache_context = false;
+    emu_instance->hw_render.bottom_left_origin = true;
+    switch (context_type) {
+        case RETRO_HW_CONTEXT_OPENGL_CORE:
+            // minimum requirements to run is opengl 3.3 (RA will try to use highest version available anyway)
+            emu_instance->hw_render.version_major = 3;
+            emu_instance->hw_render.version_minor = 3;
+            if (LibRetro::SetHWRenderer(&emu_instance->hw_render))
+                return true;
+            break;
+        case RETRO_HW_CONTEXT_OPENGL:
+            // when using RETRO_HW_CONTEXT_OPENGL you can't set version above 3.0 (RA will try to use highest version available anyway)
+            emu_instance->hw_render.version_major = 3;
+            emu_instance->hw_render.version_minor = 0;
+            if (LibRetro::SetHWRenderer(&emu_instance->hw_render))
+                return true;
+            break;
+   }
+   return false;
+}
+
+static bool init_hw_context()
+{
+    retro_hw_context_type preferred_context = LibRetro::GetPreferredHWContext();
+    bool found_context = false;
+    // try requesting the right context for current driver
+    if (preferred_context == RETRO_HW_CONTEXT_OPENGL || preferred_context == RETRO_HW_CONTEXT_OPENGL_CORE)
+        found_context = try_init_context(preferred_context);
+    // if not found, try requesting every compatible context
+    if (!found_context)
+        found_context = try_init_context(RETRO_HW_CONTEXT_OPENGL_CORE);
+    if (!found_context)
+        found_context = try_init_context(RETRO_HW_CONTEXT_OPENGL);
+    return found_context;
+}
+
 /**
  * libretro callback; Called when a game is to be loaded.
  */
@@ -421,6 +462,8 @@ bool retro_load_game(const struct retro_game_info* info) {
 
     LibRetro::settings.file_path = info->path;
 
+    // why is "hw shared context" force-enabled here ? i can't find any issue when it's disabled
+    // i'm not gonna change this, but for the reminder, it's adding rendering latency -barbudreadmon
     LibRetro::SetHWSharedContext();
 
     if (!LibRetro::SetPixelFormat(RETRO_PIXEL_FORMAT_XRGB8888)) {
@@ -429,14 +472,7 @@ bool retro_load_game(const struct retro_game_info* info) {
         return false;
     }
 
-    emu_instance->hw_render.context_type = RETRO_HW_CONTEXT_OPENGL_CORE;
-    emu_instance->hw_render.version_major = 3;
-    emu_instance->hw_render.version_minor = 3;
-    emu_instance->hw_render.context_reset = context_reset;
-    emu_instance->hw_render.context_destroy = context_destroy;
-    emu_instance->hw_render.cache_context = false;
-    emu_instance->hw_render.bottom_left_origin = true;
-    if (!LibRetro::SetHWRenderer(&emu_instance->hw_render)) {
+    if (!init_hw_context()) {
         LOG_CRITICAL(Frontend, "OpenGL 3.3 is not supported.");
         LibRetro::DisplayMessage("OpenGL 3.3 is not supported.");
         return false;
