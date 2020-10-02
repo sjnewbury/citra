@@ -25,8 +25,6 @@ void PollInput();
 /// Sets the environmental variables used for settings.
 bool SetVariables(const retro_variable vars[]);
 
-retro_hw_context_type GetPreferredHWContext();
-
 bool SetHWSharedContext(void);
 
 /// Returns the LibRetro save directory, or a empty string if one doesn't exist.
