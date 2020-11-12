@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <common/file_util.h>
+#include <boost/algorithm/string/predicate.hpp>
 
 #ifdef HAVE_GLAD
 #include <glad/glad.h>
@@ -333,6 +334,9 @@ void UpdateSettings() {
         }
 
         if (!target_dir.empty()) {
+            if (!boost::algorithm::ends_with(target_dir, "/"))
+                target_dir += "/";
+
             target_dir += "Citra/";
 
             // Ensure that this new dir exists
