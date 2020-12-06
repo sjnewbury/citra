@@ -102,6 +102,7 @@ void LibRetro::OnConfigureEnvironment() {
          "Right analog function; C-Stick and Touchscreen Pointer|Touchscreen Pointer|C-Stick"},
         {"citra_deadzone", "Emulated pointer deadzone (%); 15|20|25|30|35|0|5|10"},
         {"citra_mouse_touchscreen", "Enable mouse input for touchscreen; enabled|disabled"},
+        {"citra_mouse_show_pointer", "Show mouse pointer for touchscreen; enabled|disabled"},
         {"citra_use_virtual_sd", "Enable virtual SD card; enabled|disabled"},
         {"citra_use_libretro_save_path", "Savegame location; LibRetro Default|Citra Default"},
         {"citra_is_new_3ds", "3DS system model; Old 3DS|New 3DS"},
@@ -187,6 +188,8 @@ void UpdateSettings() {
         LibRetro::FetchVariable("citra_use_gdbstub", "disabled") == "enabled";
     LibRetro::settings.mouse_touchscreen =
         LibRetro::FetchVariable("citra_mouse_touchscreen", "enabled") == "enabled";
+    LibRetro::settings.mouse_show_pointer =
+        LibRetro::FetchVariable("citra_mouse_show_pointer", "enabled") == "enabled";
 
     // These values are a bit more hard to define, unfortunately.
     auto scaling = LibRetro::FetchVariable("citra_resolution_factor", "1x (Native)");
