@@ -1,28 +1,42 @@
-variables:
-  GIT_SUBMODULE_STRATEGY: normal
+# DESCRIPTION: GitLab CI/CD for libRetro (NOT FOR GitLab-proper)
 
+##############################################################################
+################################# BOILERPLATE ################################
+##############################################################################
+
+# Core definitions
 .core-defs:
   variables:
     CORENAME: citra
     EXTRA_PATH: src/citra_libretro
     CORE_ARGS: -DENABLE_LIBRETRO=1 -DENABLE_SDL2=0 -DENABLE_QT=0 -DENABLE_WEB_SERVICE=0
+    
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
 
 .core-linux-defs:
   extends: .core-defs
   variables:
     CORE_ARGS: -DENABLE_LIBRETRO=1 -DLIBRETRO_STATIC=1 -DENABLE_SDL2=0 -DENABLE_QT=0 -DENABLE_WEB_SERVICE=0
 
+# Inclusion templates, required for the build to work
 include:
-  - template: Jobs/Code-Quality.gitlab-ci.yml
+  ################################## DESKTOPS ################################
+  # Linux 64-bit
   - project: 'libretro-infrastructure/ci-templates'
     file: '/linux-cmake.yml'
 
+# Stages for building
 stages:
   - build-prepare
   - build-shared
-  - test
 
-#Desktop
+##############################################################################
+#################################### STAGES ##################################
+##############################################################################
+#
+################################### DESKTOPS #################################
+# Linux 64-bit
 libretro-build-linux-x86_64:
   extends:
     - .libretro-linux-cmake-x86_64
