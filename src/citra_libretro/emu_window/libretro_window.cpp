@@ -163,6 +163,8 @@ void EmuWindow_LibRetro::UpdateLayout() {
             baseX *= scaling;
             baseY *= scaling;
         }
+
+        doCleanFrame = true;
         break;
     case Settings::LayoutOption::SideScreen:
         baseX = Core::kScreenBottomWidth + Core::kScreenTopWidth;
@@ -180,6 +182,7 @@ void EmuWindow_LibRetro::UpdateLayout() {
         baseY = Core::kScreenTopHeight + Core::kScreenBottomHeight;
         baseX *= scaling;
         baseY *= scaling;
+        doCleanFrame = true;
         break;
     }
 
