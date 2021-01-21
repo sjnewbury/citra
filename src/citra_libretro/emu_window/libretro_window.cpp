@@ -7,6 +7,7 @@
 
 #include "audio_core/audio_types.h"
 #include "citra_libretro/citra_libretro.h"
+#include "citra_libretro/core_settings.h"
 #include "citra_libretro/environment.h"
 #include "citra_libretro/input/input_factory.h"
 #include "core/3ds.h"
@@ -58,7 +59,7 @@ void EmuWindow_LibRetro::SwapBuffers() {
 
     ResetGLState();
 
-    if (tracker != nullptr) {
+    if (tracker != nullptr && LibRetro::settings.mouse_show_pointer) {
         tracker->Render(width, height);
     }
 

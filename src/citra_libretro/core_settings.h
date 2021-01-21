@@ -19,6 +19,7 @@ struct CoreSettings {
     LibRetro::CStickFunction analog_function;
 
     bool mouse_touchscreen;
+    bool mouse_show_pointer;
 
 } extern settings;
 
