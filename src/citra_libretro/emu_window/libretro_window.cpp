@@ -91,7 +91,10 @@ void EmuWindow_LibRetro::PollEvents() {
     if (tracker != nullptr) {
         tracker->Update(width, height, GetFramebufferLayout().bottom_screen);
 
-        if (tracker->IsPressed()) {
+        bool isSingleTopScreen = Settings::values.layout_option == Settings::LayoutOption::SingleScreen &&
+                                 !Settings::values.swap_screen;
+
+        if (tracker->IsPressed() && !isSingleTopScreen) {
             auto mousePos = tracker->GetPressedPosition();
 
             if (hasTouched) {
