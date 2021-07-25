@@ -255,7 +255,12 @@ void GSP_GPU::ReadHWRegs(Kernel::HLERequestContext& ctx) {
     rb.PushStaticBuffer(std::move(buffer), 0);
 }
 
-ResultCode SetBufferSwap(u32 screen_id, const FrameBufferInfo& info) {
+ /* This works around a build error where screen_id was a function parameter and
+  * was used where a constant expression was required, which it cannot be.
+  * This relies on the fact that screen_id can only be 0 or 1.
+  */
+template<u32 screen_id>
+ResultCode SetBufferSwapForScreen(const FrameBufferInfo& info) {
     u32 base_address = 0x400000;
     PAddr phys_address_left = Memory::VirtualToPhysicalAddress(info.address_left);
     PAddr phys_address_right = Memory::VirtualToPhysicalAddress(info.address_right);
@@ -293,6 +298,13 @@ ResultCode SetBufferSwap(u32 screen_id, const FrameBufferInfo& info) {
     }
 
     return RESULT_SUCCESS;
+}
+
+ResultCode SetBufferSwap(u32 screen_id, const FrameBufferInfo& info) {
+    if (screen_id == 0)
+        return SetBufferSwapForScreen<0> (info);
+    else
+        return SetBufferSwapForScreen<1> (info);
 }
 
 void GSP_GPU::SetBufferSwap(Kernel::HLERequestContext& ctx) {
