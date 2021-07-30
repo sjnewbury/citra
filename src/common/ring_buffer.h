@@ -9,6 +9,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstring>
+#include <limits>
 #include <type_traits>
 #include <vector>
 #include "common/common_types.h"
