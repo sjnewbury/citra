@@ -6,6 +6,7 @@
 
 #include <fmt/format.h>
 #include "common/common_types.h"
+#include <algorithm>
 
 namespace Log {
 
