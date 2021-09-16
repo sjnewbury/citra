@@ -474,9 +474,11 @@ target_link_libraries(core PUBLIC common PRIVATE audio_core network video_core)
 target_link_libraries(core PUBLIC Boost::boost PRIVATE cryptopp fmt open_source_archives Boost::serialization)
 
 if (ENABLE_WEB_SERVICE)
-    get_directory_property(OPENSSL_LIBS
-        DIRECTORY ${PROJECT_SOURCE_DIR}/externals/libressl
-        DEFINITION OPENSSL_LIBS)
+    if (NOT USE_SYSTEM_SSL)
+        get_directory_property(OPENSSL_LIBS
+            DIRECTORY ${PROJECT_SOURCE_DIR}/externals/libressl
+            DEFINITION OPENSSL_LIBS)
+    endif()
 
     target_compile_definitions(core PRIVATE -DENABLE_WEB_SERVICE -DCPPHTTPLIB_OPENSSL_SUPPORT)
     target_link_libraries(core PRIVATE web_service ${OPENSSL_LIBS} httplib lurlparser)

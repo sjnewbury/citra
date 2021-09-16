@@ -13,9 +13,11 @@ add_library(web_service STATIC
 
 create_target_directory_groups(web_service)
 
-get_directory_property(OPENSSL_LIBS
-        DIRECTORY ${PROJECT_SOURCE_DIR}/externals/libressl
-        DEFINITION OPENSSL_LIBS)
+if (NOT USE_SYSTEM_SSL)
+    get_directory_property(OPENSSL_LIBS
+            DIRECTORY ${PROJECT_SOURCE_DIR}/externals/libressl
+            DEFINITION OPENSSL_LIBS)
+endif()
 target_compile_definitions(web_service PRIVATE -DCPPHTTPLIB_OPENSSL_SUPPORT)
 target_link_libraries(web_service PRIVATE common network json-headers ${OPENSSL_LIBS} httplib lurlparser cpp-jwt)
 if (ANDROID)

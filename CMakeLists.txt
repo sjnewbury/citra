@@ -24,6 +24,11 @@ option(ENABLE_LIBRETRO "Enable the LibRetro frontend" OFF)
 
 option(ENABLE_WEB_SERVICE "Enable web services (telemetry, etc.)" ON)
 
+if (ENABLE_WEB_SERVICE)
+    option(USE_SYSTEM_SSL "Use the system SSL libs (instead of the bundled libressl)" OFF)
+endif()
+
+
 option(ENABLE_CUBEB "Enables the cubeb audio backend" OFF)
 
 option(ENABLE_FFMPEG_AUDIO_DECODER "Enable FFmpeg audio (AAC) decoder" OFF)
@@ -42,6 +47,12 @@ CMAKE_DEPENDENT_OPTION(ENABLE_MF "Use Media Foundation decoder (preferred over F
 CMAKE_DEPENDENT_OPTION(COMPILE_WITH_DWARF "Add DWARF debugging information" ON "MINGW" OFF)
 
 option(USE_SYSTEM_BOOST "Use the system Boost libs (instead of the bundled ones)" OFF)
+option(USE_SYSTEM_FMT "Use the system libfmt (instead of the bundled one)" OFF)
+option(USE_SYSTEM_XBYAK "Use the system xbyak (instead of the bundled one)" OFF)
+option(USE_SYSTEM_CRYPTOPP "Use the system crypto++ (instead of the bundled one)" OFF)
+option(USE_SYSTEM_SOUNDTOUCH "Use the system SoundTouch (instead of the bundled one)" OFF)
+option(USE_SYSTEM_ZSTD "Use the system Zstandard (instead of the bundled one)" OFF)
+option(USE_SYSTEM_ENET "Use the system libenet (instead of the bundled one)" OFF)
 
 CMAKE_DEPENDENT_OPTION(ENABLE_FDK "Use FDK AAC decoder" OFF "NOT ENABLE_FFMPEG_AUDIO_DECODER;NOT ENABLE_MF" OFF)
 
@@ -65,7 +76,7 @@ function(check_submodules_present)
         endif()
     endforeach()
 endfunction()
-check_submodules_present()
+#check_submodules_present()
 
 configure_file(${PROJECT_SOURCE_DIR}/dist/compatibility_list/compatibility_list.qrc
                ${PROJECT_BINARY_DIR}/dist/compatibility_list/compatibility_list.qrc
@@ -430,6 +441,77 @@ if (NOT USE_SYSTEM_BOOST)
 endif()
 
 enable_testing()
+
+if (USE_SYSTEM_FMT AND NOT TARGET fmt)
+    find_package(fmt REQUIRED)
+    add_library(fmt ALIAS fmt::fmt)
+endif()
+
+if (USE_SYSTEM_SSL AND NOT TARGET libressl)
+    include(FindPkgConfig)
+    find_package(LibSSL)
+endif()
+
+# Crypto++
+if (USE_SYSTEM_CRYPTOPP AND NOT TARGET cryptopp)
+    include(FindPkgConfig)
+    find_package(LibCrypto++)
+endif()
+if (LIBCRYPTOPP_FOUND)
+    add_library(cryptopp SHARED IMPORTED)
+    set_property(TARGET cryptopp PROPERTY
+             IMPORTED_LOCATION "${LIBCRYPTOPP_LIBRARIES}")
+    target_include_directories(cryptopp SYSTEM INTERFACE ${LIBCRYPTOPP_INCLUDE_DIR})
+else()
+    add_subdirectory(externals/cryptopp)
+endif()
+
+# Zstandard
+if (USE_SYSTEM_ZSTD AND NOT TARGET libzstd)
+    include(FindPkgConfig)
+    find_package(Zstd)
+endif()
+if (ZSTD_FOUND)
+    add_library(libzstd SHARED IMPORTED)
+    set_property(TARGET libzstd PROPERTY
+             IMPORTED_LOCATION "${ZSTD_LIBRARIES}")
+    target_include_directories(libzstd SYSTEM INTERFACE ${ZSTD_INCLUDE_DIR})
+else()
+    add_subdirectory(externals/zstd/build/cmake EXCLUDE_FROM_ALL)
+    target_include_directories(libzstd_static INTERFACE $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/externals/zstd/lib>)
+endif()
+
+# SoundTouch
+if (USE_SYSTEM_SOUNDTOUCH AND NOT TARGET SoundTouch)
+    include(FindPkgConfig)
+    find_package(SoundTouch)
+endif()
+if (SOUNDTOUCH_FOUND)
+    add_library(SoundTouch SHARED IMPORTED)
+    set_property(TARGET SoundTouch PROPERTY
+             IMPORTED_LOCATION "${SOUNDTOUCH_LIBRARIES}")
+    target_include_directories(SoundTouch SYSTEM INTERFACE ${SOUNDTOUCH_INCLUDE_DIR})
+else()
+    add_subdirectory(externals/soundtouch)
+    # The SoundTouch target doesn't export the necessary include paths as properties by default
+    target_include_directories(SoundTouch INTERFACE ./soundtouch/include)
+endif()
+
+# ENet
+if (USE_SYSTEM_ENET AND NOT TARGET enet)
+    include(FindPkgConfig)
+    find_package(ENet)
+endif()
+if (ENET_FOUND)
+    add_library(enet SHARED IMPORTED)
+    set_property(TARGET enet PROPERTY
+             IMPORTED_LOCATION "${ENET_LIBRARIES}")
+    target_include_directories(enet SYSTEM INTERFACE ${ENET_INCLUDE_DIR})
+else()
+    add_subdirectory(externals/enet)
+    target_include_directories(enet INTERFACE ./enet/include)
+endif()
+
 add_subdirectory(externals)
 
 # Boost
