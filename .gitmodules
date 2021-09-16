@@ -1,6 +1,6 @@
 [submodule "boost"]
     path = externals/boost
-    url = https://github.com/m4tsa/ext-boost.git
+    url = https://github.com/citra-emu/ext-boost.git
 [submodule "nihstro"]
     path = externals/nihstro
     url = https://github.com/neobrain/nihstro.git
@@ -53,5 +53,5 @@
     path = externals/zstd
     url = https://github.com/facebook/zstd.git
 [submodule "boost_serialization"]
-	path = externals/boost-serialization
-	url = https://github.com/boostorg/serialization.git
+    path = externals/boost-serialization
+    url = https://github.com/boostorg/serialization.git
